@@ -190,6 +190,45 @@
       margin-bottom: 16px;
     }
 
+    .roster-panel {
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid rgba(216, 223, 220, 0.85);
+    }
+
+    .roster-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .roster-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .roster-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(184, 255, 53, 0.14);
+      color: #2c4610;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .roster-chip small {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
     .player-row {
       padding: 14px;
       background: rgba(255, 255, 255, 0.82);
@@ -507,6 +546,22 @@
         </div>
         <div id="playersList" class="players-list"></div>
 
+        <div class="roster-panel">
+          <h3>Saved Roster</h3>
+          <div class="roster-controls">
+            <div class="field">
+              <label for="rosterSelect">Add player from roster</label>
+              <select id="rosterSelect">
+                <option value="">Select a saved player</option>
+              </select>
+            </div>
+            <button id="addFromRosterBtn" class="secondary-btn" type="button">Add From Roster</button>
+          </div>
+          <div id="rosterPreview" class="roster-chips">
+            <div class="empty">New players you enter will be remembered here for future sessions.</div>
+          </div>
+        </div>
+
         <div class="actions">
           <button id="addPlayerBtn" class="secondary-btn" type="button">Add Player</button>
           <button id="generateBtn" class="primary-btn" type="button">Generate Teams</button>
@@ -568,10 +623,13 @@
 
   <script>
     const STORAGE_KEY = "ultrapadel-pro-sessions";
+    const ROSTER_STORAGE_KEY = "ultrapadel-pro-roster";
     const MAX_GENERATION_ATTEMPTS = 900;
+    const EXACT_TEAM_SEARCH_LIMIT = 12;
 
     const state = {
       players: [],
+      roster: [],
       currentSession: null,
       shuffleInterval: null
     };
@@ -581,7 +639,10 @@
       bookingDuration: document.getElementById("bookingDuration"),
       matchDuration: document.getElementById("matchDuration"),
       playersList: document.getElementById("playersList"),
+      rosterSelect: document.getElementById("rosterSelect"),
+      rosterPreview: document.getElementById("rosterPreview"),
       addPlayerBtn: document.getElementById("addPlayerBtn"),
+      addFromRosterBtn: document.getElementById("addFromRosterBtn"),
       generateBtn: document.getElementById("generateBtn"),
       exportBtn: document.getElementById("exportBtn"),
       clearHistoryBtn: document.getElementById("clearHistoryBtn"),
@@ -610,6 +671,48 @@
       } catch (error) {
         return [];
       }
+    }
+
+    function getStoredRoster() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(ROSTER_STORAGE_KEY) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveRoster(roster) {
+      localStorage.setItem(ROSTER_STORAGE_KEY, JSON.stringify(roster));
+    }
+
+    function normalizeName(name) {
+      return String(name || "").trim().toLowerCase();
+    }
+
+    function upsertRosterPlayer(player) {
+      const name = String(player.name || "").trim();
+      if (!name) {
+        return;
+      }
+
+      const normalizedName = normalizeName(name);
+      const nextEntry = {
+        name,
+        sex: player.sex,
+        skill: Number(player.skill)
+      };
+
+      const existingIndex = state.roster.findIndex((entry) => normalizeName(entry.name) === normalizedName);
+      if (existingIndex >= 0) {
+        state.roster[existingIndex] = nextEntry;
+      } else {
+        state.roster.push(nextEntry);
+      }
+
+      state.roster.sort((a, b) => a.name.localeCompare(b.name));
+      saveRoster(state.roster);
+      renderRoster();
     }
 
     function saveSession(session) {
@@ -673,6 +776,27 @@
         `;
         els.playersList.appendChild(row);
       });
+    }
+
+    function renderRoster() {
+      const roster = [...state.roster].sort((a, b) => a.name.localeCompare(b.name));
+      els.rosterSelect.innerHTML = '<option value="">Select a saved player</option>';
+
+      roster.forEach((player) => {
+        const option = document.createElement("option");
+        option.value = normalizeName(player.name);
+        option.textContent = `${player.name} · ${player.sex} · Skill ${player.skill}`;
+        els.rosterSelect.appendChild(option);
+      });
+
+      if (!roster.length) {
+        els.rosterPreview.innerHTML = '<div class="empty">New players you enter will be remembered here for future sessions.</div>';
+        return;
+      }
+
+      els.rosterPreview.innerHTML = roster.map((player) => `
+        <span class="roster-chip">${escapeHtml(player.name)}<small>${player.sex} · ${player.skill}</small></span>
+      `).join("");
     }
 
     function updateStats() {
@@ -752,33 +876,72 @@
       return "";
     }
 
-    function scoreTeaming(pairing, historyMap) {
+    function evaluateTeaming(pairing, historyMap) {
       const teamAverages = pairing.map((team) => averageSkill(team));
       const sessionAverage = teamAverages.reduce((sum, value) => sum + value, 0) / teamAverages.length;
 
-      let repeatPenalty = 0;
-      let sameSexPenalty = 0;
+      let repeatedTeams = 0;
+      let repeatWeight = 0;
+      let sameSexTeams = 0;
       let averageSpreadPenalty = 0;
+      let internalBalancePenalty = 0;
 
       pairing.forEach((team, index) => {
         const key = team.map((member) => member.name.trim().toLowerCase()).sort().join("|");
         const repeats = historyMap.get(key) || 0;
-        repeatPenalty += repeats * 90;
+        if (repeats > 0) {
+          repeatedTeams += 1;
+          repeatWeight += repeats;
+        }
         if (team[0].sex === team[1].sex) {
-          sameSexPenalty += 10;
+          sameSexTeams += 1;
         }
         averageSpreadPenalty += Math.abs(teamAverages[index] - sessionAverage) * 12;
+        // Encourage partners with complementary skill, but without making teams wildly uneven.
+        internalBalancePenalty += Math.abs(Number(team[0].skill) - Number(team[1].skill)) * 3;
       });
 
-      // Encourage partners with complementary skill, but without making teams wildly uneven.
-      const internalBalancePenalty = pairing.reduce((sum, team) => {
-        return sum + Math.abs(Number(team[0].skill) - Number(team[1].skill)) * 3;
-      }, 0);
-
-      return repeatPenalty + sameSexPenalty + averageSpreadPenalty + internalBalancePenalty;
+      return {
+        repeatedTeams,
+        repeatWeight,
+        sameSexTeams,
+        averageSpreadPenalty,
+        internalBalancePenalty,
+        totalScore: (sameSexTeams * 10) + averageSpreadPenalty + internalBalancePenalty
+      };
     }
 
-    function buildGreedyCandidate(players) {
+    function compareTeamingMetrics(left, right) {
+      if (!left) {
+        return 1;
+      }
+      if (!right) {
+        return -1;
+      }
+      if (left.repeatedTeams !== right.repeatedTeams) {
+        return left.repeatedTeams < right.repeatedTeams ? -1 : 1;
+      }
+      if (left.repeatWeight !== right.repeatWeight) {
+        return left.repeatWeight < right.repeatWeight ? -1 : 1;
+      }
+      if (left.sameSexTeams !== right.sameSexTeams) {
+        return left.sameSexTeams < right.sameSexTeams ? -1 : 1;
+      }
+      if (left.averageSpreadPenalty !== right.averageSpreadPenalty) {
+        return left.averageSpreadPenalty < right.averageSpreadPenalty ? -1 : 1;
+      }
+      if (left.internalBalancePenalty !== right.internalBalancePenalty) {
+        return left.internalBalancePenalty < right.internalBalancePenalty ? -1 : 1;
+      }
+      return 0;
+    }
+
+    function getPairHistoryCount(playerA, playerB, historyMap) {
+      const key = [playerA.name, playerB.name].map((name) => normalizeName(name)).sort().join("|");
+      return historyMap.get(key) || 0;
+    }
+
+    function buildGreedyCandidate(players, historyMap) {
       const pool = shuffleArray(players);
       const candidate = [];
 
@@ -789,7 +952,8 @@
 
         for (let i = 0; i < pool.length; i += 1) {
           const partner = pool[i];
-          let score = Math.abs(Number(first.skill) - Number(partner.skill)) * 4;
+          let score = getPairHistoryCount(first, partner, historyMap) * 1000;
+          score += Math.abs(Number(first.skill) - Number(partner.skill)) * 4;
           if (first.sex === partner.sex) {
             score += 7;
           }
@@ -808,20 +972,76 @@
       return candidate;
     }
 
+    function searchBestTeaming(remainingPlayers, historyMap, currentPairing, bestResult) {
+      if (!remainingPlayers.length) {
+        const metrics = evaluateTeaming(currentPairing, historyMap);
+        if (!bestResult || compareTeamingMetrics(metrics, bestResult.metrics) < 0) {
+          return {
+            pairing: currentPairing.map((team) => team.map((player) => ({ ...player }))),
+            metrics
+          };
+        }
+        return bestResult;
+      }
+
+      const [first, ...rest] = remainingPlayers;
+      const orderedPartners = rest
+        .map((partner, index) => ({
+          partner,
+          index,
+          repeatCount: getPairHistoryCount(first, partner, historyMap),
+          sameSex: first.sex === partner.sex ? 1 : 0,
+          skillGap: Math.abs(Number(first.skill) - Number(partner.skill))
+        }))
+        .sort((a, b) => {
+          if (a.repeatCount !== b.repeatCount) {
+            return a.repeatCount - b.repeatCount;
+          }
+          if (a.sameSex !== b.sameSex) {
+            return a.sameSex - b.sameSex;
+          }
+          if (a.skillGap !== b.skillGap) {
+            return a.skillGap - b.skillGap;
+          }
+          return Math.random() - 0.5;
+        });
+
+      let candidateBest = bestResult;
+
+      orderedPartners.forEach(({ partner, index }) => {
+        const nextPairing = [...currentPairing, [first, partner]];
+        const partialMetrics = evaluateTeaming(nextPairing, historyMap);
+
+        if (candidateBest && partialMetrics.repeatedTeams > candidateBest.metrics.repeatedTeams) {
+          return;
+        }
+
+        const nextRemaining = rest.filter((_, restIndex) => restIndex !== index);
+        candidateBest = searchBestTeaming(nextRemaining, historyMap, nextPairing, candidateBest);
+      });
+
+      return candidateBest;
+    }
+
     function generateTeams(players, sessions) {
       const historyMap = buildTeamHistoryMap(sessions);
-      const shuffled = shuffleArray(clonePlayers(players));
+      const workingPlayers = shuffleArray(clonePlayers(players));
       let bestPairing = null;
-      let bestScore = Number.POSITIVE_INFINITY;
+      let bestMetrics = null;
 
-      // Use repeated randomized greedy candidates instead of building the full pairing tree,
-      // which becomes impractical as player counts grow.
-      for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt += 1) {
-        const pairing = buildGreedyCandidate(shuffled);
-        const score = scoreTeaming(pairing, historyMap);
-        if (score < bestScore) {
-          bestScore = score;
-          bestPairing = pairing;
+      if (workingPlayers.length <= EXACT_TEAM_SEARCH_LIMIT) {
+        const result = searchBestTeaming(workingPlayers, historyMap, [], null);
+        bestPairing = result ? result.pairing : null;
+        bestMetrics = result ? result.metrics : null;
+      } else {
+        // For larger groups, keep the same priority order but sample many candidates.
+        for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt += 1) {
+          const pairing = buildGreedyCandidate(workingPlayers, historyMap);
+          const metrics = evaluateTeaming(pairing, historyMap);
+          if (!bestMetrics || compareTeamingMetrics(metrics, bestMetrics) < 0) {
+            bestPairing = pairing;
+            bestMetrics = metrics;
+          }
         }
       }
 
@@ -1129,6 +1349,7 @@
       await new Promise((resolve) => setTimeout(resolve, 1800));
 
       const sessions = getStoredSessions();
+      players.forEach((player) => upsertRosterPlayer(player));
       const teams = generateTeams(players, sessions);
       const scheduleData = scheduleMatches(teams, totalRounds, courts, sessions);
       const session = buildSession(teams, scheduleData);
@@ -1159,6 +1380,10 @@
       } else {
         player[target.dataset.field] = target.value;
       }
+
+      if (String(player.name || "").trim()) {
+        upsertRosterPlayer(player);
+      }
     }
 
     function addPlayer(player) {
@@ -1169,6 +1394,28 @@
     function removePlayer(id) {
       state.players = state.players.filter((player) => player.id !== id);
       renderPlayers();
+    }
+
+    function addPlayerFromRoster() {
+      const selectedName = els.rosterSelect.value;
+      if (!selectedName) {
+        alert("Select a saved player from the roster first.");
+        return;
+      }
+
+      const rosterPlayer = state.roster.find((player) => normalizeName(player.name) === selectedName);
+      if (!rosterPlayer) {
+        return;
+      }
+
+      const alreadyInSession = state.players.some((player) => normalizeName(player.name) === selectedName);
+      if (alreadyInSession) {
+        alert(`${rosterPlayer.name} is already in this session setup.`);
+        return;
+      }
+
+      addPlayer(createPlayer(rosterPlayer.name, rosterPlayer.sex, rosterPlayer.skill));
+      els.rosterSelect.value = "";
     }
 
     function seedPlayers() {
@@ -1188,6 +1435,7 @@
       els.addPlayerBtn.addEventListener("click", () => {
         addPlayer(createPlayer("", "Male", 3));
       });
+      els.addFromRosterBtn.addEventListener("click", addPlayerFromRoster);
 
       els.generateBtn.addEventListener("click", handleGenerate);
       els.exportBtn.addEventListener("click", exportSession);
@@ -1224,8 +1472,10 @@
     }
 
     function init() {
+      state.roster = getStoredRoster();
       seedPlayers();
       renderPlayers();
+      renderRoster();
       renderHistory();
       updateStats();
       attachEvents();
