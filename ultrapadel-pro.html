@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UltraPadel Pro</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --panel: #f3f5f4;
+      --panel-strong: #e9eeeb;
+      --text: #111715;
+      --muted: #60706a;
+      --line: #d8dfdc;
+      --accent: #b8ff35;
+      --accent-strong: #9aea13;
+      --accent-dark: #1d2b18;
+      --shadow: 0 18px 50px rgba(17, 23, 21, 0.08);
+      --radius: 22px;
+      --radius-sm: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top right, rgba(184, 255, 53, 0.18), transparent 30%),
+        linear-gradient(180deg, #fbfcfb 0%, #ffffff 50%, #f7faf8 100%);
+      color: var(--text);
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      padding: 28px;
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      gap: 22px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      padding: 28px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(240,244,241,0.96));
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(216, 223, 220, 0.85);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -80px auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(184,255,53,0.45), rgba(184,255,53,0));
+      pointer-events: none;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 12px;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      transform: skewX(-10deg);
+    }
+
+    .logo .pro {
+      color: var(--accent-dark);
+      background: var(--accent);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.42em;
+      letter-spacing: 0.18em;
+      transform: translateY(-10px) skewX(10deg);
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(243, 245, 244, 0.9);
+      border: 1px solid rgba(216, 223, 220, 0.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      backdrop-filter: blur(8px);
+    }
+
+    .panel h2,
+    .panel h3 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      letter-spacing: 0.02em;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .field,
+    .player-cell {
+      display: grid;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(154, 234, 19, 0.8);
+      box-shadow: 0 0 0 4px rgba(184, 255, 53, 0.18);
+    }
+
+    .players-head,
+    .player-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) 60px;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .players-head {
+      margin-bottom: 12px;
+      padding: 0 4px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .players-list {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .player-row {
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(216, 223, 220, 0.85);
+      border-radius: 18px;
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .player-row:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(17, 23, 21, 0.06);
+    }
+
+    .icon-btn,
+    .secondary-btn,
+    .primary-btn {
+      border: none;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: #ffffff;
+      color: #c54444;
+      border: 1px solid rgba(197, 68, 68, 0.16);
+      font-size: 1.1rem;
+    }
+
+    .icon-btn:hover,
+    .secondary-btn:hover,
+    .primary-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      padding: 13px 18px;
+      border-radius: 14px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+      color: var(--accent-dark);
+      box-shadow: 0 14px 28px rgba(154, 234, 19, 0.28);
+    }
+
+    .secondary-btn {
+      background: #ffffff;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .meta-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat-card {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(241,245,243,0.92));
+      border: 1px solid rgba(216, 223, 220, 0.85);
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 1.25rem;
+      margin-top: 8px;
+    }
+
+    .stat-card span {
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .shuffle-box {
+      min-height: 118px;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(29,43,24,0.96), rgba(36,52,30,0.92));
+      color: #efffe1;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .shuffle-box::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: conic-gradient(from 0deg, rgba(184,255,53,0.18), transparent 40%, rgba(184,255,53,0.1));
+      animation: rotateGlow 9s linear infinite;
+    }
+
+    .shuffle-inner {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .shuffle-state {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      min-height: 30px;
+      margin-top: 10px;
+    }
+
+    .shuffle-pill {
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.12);
+      animation: popIn 260ms ease;
+    }
+
+    .results-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .team-list,
+    .schedule-list,
+    .history-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .team-card,
+    .round-card,
+    .history-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.84);
+      border: 1px solid rgba(216,223,220,0.85);
+    }
+
+    .team-card header,
+    .round-card header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .team-tag,
+    .court-tag,
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .team-tag,
+    .court-tag {
+      background: rgba(184,255,53,0.18);
+      color: #3b5a12;
+    }
+
+    .badge {
+      background: rgba(17,23,21,0.06);
+      color: var(--muted);
+    }
+
+    .team-players,
+    .match-line,
+    .history-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .name-chip {
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: var(--panel);
+      font-weight: 700;
+    }
+
+    .name-chip small {
+      color: var(--muted);
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .vs {
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .empty {
+      padding: 22px;
+      border-radius: 18px;
+      border: 1px dashed var(--line);
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255,255,255,0.55);
+    }
+
+    .footer-note {
+      font-size: 0.83rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    @keyframes rotateGlow {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 780px) {
+      body {
+        padding: 16px;
+      }
+
+      .config-grid,
+      .meta-row {
+        grid-template-columns: 1fr;
+      }
+
+      .players-head {
+        display: none;
+      }
+
+      .player-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <div class="logo">UltraPadel <span class="pro">Pro</span></div>
+      <p>Create balanced fixed doubles teams, schedule fair court rotations, and keep session history so the app avoids recycling the same pairings unless it genuinely has to.</p>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>Session Setup</h2>
+        <div class="config-grid">
+          <div class="field">
+            <label for="courts">Number of courts</label>
+            <input id="courts" type="number" min="1" step="1" value="2" />
+          </div>
+          <div class="field">
+            <label for="bookingDuration">Total booking duration (minutes)</label>
+            <input id="bookingDuration" type="number" min="1" step="1" value="90" />
+          </div>
+          <div class="field">
+            <label for="matchDuration">Match duration (minutes)</label>
+            <input id="matchDuration" type="number" min="1" step="1" value="20" />
+          </div>
+        </div>
+
+        <h3>Players</h3>
+        <div class="players-head">
+          <div>Name</div>
+          <div>Sex</div>
+          <div>Skill</div>
+          <div>Remove</div>
+        </div>
+        <div id="playersList" class="players-list"></div>
+
+        <div class="actions">
+          <button id="addPlayerBtn" class="secondary-btn" type="button">Add Player</button>
+          <button id="generateBtn" class="primary-btn" type="button">Generate Teams</button>
+          <button id="exportBtn" class="secondary-btn" type="button">Export Session</button>
+          <button id="clearHistoryBtn" class="secondary-btn" type="button">Clear Stored History</button>
+        </div>
+
+        <div class="meta-row">
+          <div class="stat-card">
+            <span>Rounds Available</span>
+            <strong id="roundsStat">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Session Teams</span>
+            <strong id="teamsStat">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Stored Sessions</span>
+            <strong id="historyStat">0</strong>
+          </div>
+        </div>
+
+        <p class="footer-note">Teams are fixed once generated. Scheduling rotates those same teams through the available courts without reshuffling them mid-session.</p>
+      </section>
+
+      <section class="panel">
+        <div class="shuffle-box">
+          <div class="shuffle-inner">
+            <strong id="shuffleTitle">Ready to build a session</strong>
+            <div id="shuffleState" class="shuffle-state"></div>
+          </div>
+        </div>
+
+        <div class="results-grid">
+          <div>
+            <h2>Fixed Teams</h2>
+            <div id="teamsOutput" class="team-list">
+              <div class="empty">Generate a session to lock in teams for the booking.</div>
+            </div>
+          </div>
+
+          <div>
+            <h2>Match Schedule</h2>
+            <div id="scheduleOutput" class="schedule-list">
+              <div class="empty">The match schedule will appear after team generation.</div>
+            </div>
+          </div>
+
+          <div>
+            <h2>Recent Sessions</h2>
+            <div id="historyOutput" class="history-list">
+              <div class="empty">No previous sessions stored yet.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "ultrapadel-pro-sessions";
+    const MAX_GENERATION_ATTEMPTS = 900;
+
+    const state = {
+      players: [],
+      currentSession: null,
+      shuffleInterval: null
+    };
+
+    const els = {
+      courts: document.getElementById("courts"),
+      bookingDuration: document.getElementById("bookingDuration"),
+      matchDuration: document.getElementById("matchDuration"),
+      playersList: document.getElementById("playersList"),
+      addPlayerBtn: document.getElementById("addPlayerBtn"),
+      generateBtn: document.getElementById("generateBtn"),
+      exportBtn: document.getElementById("exportBtn"),
+      clearHistoryBtn: document.getElementById("clearHistoryBtn"),
+      shuffleTitle: document.getElementById("shuffleTitle"),
+      shuffleState: document.getElementById("shuffleState"),
+      teamsOutput: document.getElementById("teamsOutput"),
+      scheduleOutput: document.getElementById("scheduleOutput"),
+      historyOutput: document.getElementById("historyOutput"),
+      roundsStat: document.getElementById("roundsStat"),
+      teamsStat: document.getElementById("teamsStat"),
+      historyStat: document.getElementById("historyStat")
+    };
+
+    function uid() {
+      return Math.random().toString(36).slice(2, 10);
+    }
+
+    function createPlayer(name, sex, skill) {
+      return { id: uid(), name, sex, skill };
+    }
+
+    function getStoredSessions() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveSession(session) {
+      const sessions = getStoredSessions();
+      sessions.unshift(session);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions.slice(0, 40)));
+    }
+
+    function clearHistory() {
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+      updateStats();
+    }
+
+    function buildTeamHistoryMap(sessions) {
+      const historyMap = new Map();
+      sessions.forEach((session) => {
+        (session.teams || []).forEach((team) => {
+          const key = team.members.map((member) => member.name.trim().toLowerCase()).sort().join("|");
+          historyMap.set(key, (historyMap.get(key) || 0) + 1);
+        });
+      });
+      return historyMap;
+    }
+
+    function buildMatchHistoryMap(sessions) {
+      const historyMap = new Map();
+      sessions.forEach((session) => {
+        (session.matches || []).forEach((match) => {
+          const teams = [match.teamAKey, match.teamBKey].sort().join("::");
+          historyMap.set(teams, (historyMap.get(teams) || 0) + 1);
+        });
+      });
+      return historyMap;
+    }
+
+    function renderPlayers() {
+      els.playersList.innerHTML = "";
+      state.players.forEach((player) => {
+        const row = document.createElement("div");
+        row.className = "player-row";
+        row.innerHTML = `
+          <div class="player-cell">
+            <label>Name</label>
+            <input type="text" value="${escapeHtml(player.name)}" data-id="${player.id}" data-field="name" placeholder="Player name" />
+          </div>
+          <div class="player-cell">
+            <label>Sex</label>
+            <select data-id="${player.id}" data-field="sex">
+              <option value="Male" ${player.sex === "Male" ? "selected" : ""}>Male</option>
+              <option value="Female" ${player.sex === "Female" ? "selected" : ""}>Female</option>
+            </select>
+          </div>
+          <div class="player-cell">
+            <label>Skill</label>
+            <select data-id="${player.id}" data-field="skill">
+              ${[1, 2, 3, 4, 5].map((value) => `<option value="${value}" ${Number(player.skill) === value ? "selected" : ""}>${value}</option>`).join("")}
+            </select>
+          </div>
+          <button class="icon-btn" type="button" data-remove-id="${player.id}" aria-label="Remove player">×</button>
+        `;
+        els.playersList.appendChild(row);
+      });
+    }
+
+    function updateStats() {
+      const rounds = calculateTotalRounds();
+      const sessions = getStoredSessions();
+      els.roundsStat.textContent = String(rounds);
+      els.teamsStat.textContent = String(state.currentSession ? state.currentSession.teams.length : 0);
+      els.historyStat.textContent = String(sessions.length);
+    }
+
+    function calculateTotalRounds() {
+      const bookingDuration = Number(els.bookingDuration.value) || 0;
+      const matchDuration = Number(els.matchDuration.value) || 0;
+      if (bookingDuration <= 0 || matchDuration <= 0) {
+        return 0;
+      }
+      return Math.floor(bookingDuration / matchDuration);
+    }
+
+    function averageSkill(players) {
+      return players.reduce((sum, player) => sum + Number(player.skill), 0) / players.length;
+    }
+
+    function teamKey(team) {
+      return team.members.map((member) => member.name.trim().toLowerCase()).sort().join("|");
+    }
+
+    function clonePlayers(players) {
+      return players.map((player) => ({ ...player, skill: Number(player.skill) }));
+    }
+
+    function shuffleArray(input) {
+      const arr = [...input];
+      for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function startShuffleAnimation(playerNames) {
+      stopShuffleAnimation();
+      els.shuffleTitle.textContent = "Generating balanced session teams...";
+      const update = () => {
+        const picks = shuffleArray(playerNames).slice(0, Math.min(8, playerNames.length));
+        els.shuffleState.innerHTML = picks.map((name) => `<span class="shuffle-pill">${escapeHtml(name)}</span>`).join("");
+      };
+      update();
+      state.shuffleInterval = setInterval(update, 130);
+    }
+
+    function stopShuffleAnimation(message) {
+      if (state.shuffleInterval) {
+        clearInterval(state.shuffleInterval);
+        state.shuffleInterval = null;
+      }
+      if (message) {
+        els.shuffleTitle.textContent = message;
+      }
+    }
+
+    function validatePlayers(players) {
+      if (players.length < 4) {
+        return "Add at least 4 players to create doubles teams.";
+      }
+      if (players.length % 2 !== 0) {
+        return "Player count must be even so everyone can be placed in fixed teams of 2.";
+      }
+      const names = players.map((player) => player.name.trim()).filter(Boolean);
+      if (names.length !== players.length) {
+        return "Every player needs a name.";
+      }
+      const normalized = new Set(names.map((name) => name.toLowerCase()));
+      if (normalized.size !== names.length) {
+        return "Player names must be unique for history tracking to work properly.";
+      }
+      return "";
+    }
+
+    function scoreTeaming(pairing, historyMap) {
+      const teamAverages = pairing.map((team) => averageSkill(team));
+      const sessionAverage = teamAverages.reduce((sum, value) => sum + value, 0) / teamAverages.length;
+
+      let repeatPenalty = 0;
+      let sameSexPenalty = 0;
+      let averageSpreadPenalty = 0;
+
+      pairing.forEach((team, index) => {
+        const key = team.map((member) => member.name.trim().toLowerCase()).sort().join("|");
+        const repeats = historyMap.get(key) || 0;
+        repeatPenalty += repeats * 90;
+        if (team[0].sex === team[1].sex) {
+          sameSexPenalty += 10;
+        }
+        averageSpreadPenalty += Math.abs(teamAverages[index] - sessionAverage) * 12;
+      });
+
+      // Encourage partners with complementary skill, but without making teams wildly uneven.
+      const internalBalancePenalty = pairing.reduce((sum, team) => {
+        return sum + Math.abs(Number(team[0].skill) - Number(team[1].skill)) * 3;
+      }, 0);
+
+      return repeatPenalty + sameSexPenalty + averageSpreadPenalty + internalBalancePenalty;
+    }
+
+    function buildGreedyCandidate(players) {
+      const pool = shuffleArray(players);
+      const candidate = [];
+
+      while (pool.length) {
+        const first = pool.shift();
+        let bestIndex = 0;
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        for (let i = 0; i < pool.length; i += 1) {
+          const partner = pool[i];
+          let score = Math.abs(Number(first.skill) - Number(partner.skill)) * 4;
+          if (first.sex === partner.sex) {
+            score += 7;
+          }
+          score += Math.random() * 1.5;
+
+          if (score < bestScore) {
+            bestScore = score;
+            bestIndex = i;
+          }
+        }
+
+        const partner = pool.splice(bestIndex, 1)[0];
+        candidate.push([first, partner]);
+      }
+
+      return candidate;
+    }
+
+    function generateTeams(players, sessions) {
+      const historyMap = buildTeamHistoryMap(sessions);
+      const shuffled = shuffleArray(clonePlayers(players));
+      let bestPairing = null;
+      let bestScore = Number.POSITIVE_INFINITY;
+
+      // Use repeated randomized greedy candidates instead of building the full pairing tree,
+      // which becomes impractical as player counts grow.
+      for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt += 1) {
+        const pairing = buildGreedyCandidate(shuffled);
+        const score = scoreTeaming(pairing, historyMap);
+        if (score < bestScore) {
+          bestScore = score;
+          bestPairing = pairing;
+        }
+      }
+
+      const teams = (bestPairing || []).map((pair, index) => ({
+        id: `T${index + 1}`,
+        members: pair.map((player) => ({ ...player })),
+        averageSkill: averageSkill(pair),
+        mixed: pair[0].sex !== pair[1].sex
+      })).sort((a, b) => a.averageSkill - b.averageSkill);
+
+      return teams;
+    }
+
+    function generateTeamMatchups(teams, matchHistoryMap) {
+      const matchups = [];
+      for (let i = 0; i < teams.length; i += 1) {
+        for (let j = i + 1; j < teams.length; j += 1) {
+          const key = [teamKey(teams[i]), teamKey(teams[j])].sort().join("::");
+          matchups.push({
+            teamA: teams[i],
+            teamB: teams[j],
+            key,
+            historicalCount: matchHistoryMap.get(key) || 0
+          });
+        }
+      }
+      return matchups.sort((a, b) => a.historicalCount - b.historicalCount);
+    }
+
+    function pickBestMatchCandidate(candidates, playCounts, lastPlayedTeams, seenSessionMatchups) {
+      let best = null;
+      let bestScore = Number.POSITIVE_INFINITY;
+
+      candidates.forEach((candidate) => {
+        const teamAKey = teamKey(candidate.teamA);
+        const teamBKey = teamKey(candidate.teamB);
+        const playGapScore = playCounts[teamAKey] + playCounts[teamBKey];
+        const repeatPenalty = seenSessionMatchups.has(candidate.key) ? 180 : 0;
+        const restPenalty = (lastPlayedTeams.has(teamAKey) ? 16 : 0) + (lastPlayedTeams.has(teamBKey) ? 16 : 0);
+        const historicalPenalty = candidate.historicalCount * 8;
+        const score = playGapScore * 10 + repeatPenalty + restPenalty + historicalPenalty;
+
+        if (score < bestScore) {
+          bestScore = score;
+          best = candidate;
+        }
+      });
+
+      return best;
+    }
+
+    function scheduleMatches(teams, totalRounds, courtCount, sessions) {
+      const matchHistoryMap = buildMatchHistoryMap(sessions);
+      const allMatchups = generateTeamMatchups(teams, matchHistoryMap);
+      const playCounts = Object.fromEntries(teams.map((team) => [teamKey(team), 0]));
+      const schedule = [];
+      const seenSessionMatchups = new Set();
+      let lastPlayedTeams = new Set();
+
+      for (let round = 1; round <= totalRounds; round += 1) {
+        const matchesThisRound = [];
+        const teamsUsedThisRound = new Set();
+
+        for (let court = 1; court <= courtCount; court += 1) {
+          const available = allMatchups.filter((match) => {
+            const teamAKey = teamKey(match.teamA);
+            const teamBKey = teamKey(match.teamB);
+            return !teamsUsedThisRound.has(teamAKey) && !teamsUsedThisRound.has(teamBKey);
+          });
+
+          if (!available.length) {
+            break;
+          }
+
+          const chosen = pickBestMatchCandidate(available, playCounts, lastPlayedTeams, seenSessionMatchups);
+          if (!chosen) {
+            break;
+          }
+
+          const teamAKey = teamKey(chosen.teamA);
+          const teamBKey = teamKey(chosen.teamB);
+
+          teamsUsedThisRound.add(teamAKey);
+          teamsUsedThisRound.add(teamBKey);
+          seenSessionMatchups.add(chosen.key);
+          playCounts[teamAKey] += 1;
+          playCounts[teamBKey] += 1;
+
+          matchesThisRound.push({
+            court,
+            teamA: chosen.teamA,
+            teamB: chosen.teamB,
+            teamAKey,
+            teamBKey
+          });
+        }
+
+        schedule.push({
+          round,
+          matches: matchesThisRound
+        });
+
+        lastPlayedTeams = teamsUsedThisRound;
+      }
+
+      return { schedule, playCounts };
+    }
+
+    function buildSession(teams, scheduleData) {
+      return {
+        id: uid(),
+        createdAt: new Date().toISOString(),
+        settings: {
+          courts: Number(els.courts.value) || 0,
+          bookingDuration: Number(els.bookingDuration.value) || 0,
+          matchDuration: Number(els.matchDuration.value) || 0,
+          totalRounds: calculateTotalRounds()
+        },
+        teams: teams.map((team) => ({
+          id: team.id,
+          members: team.members.map((member) => ({ name: member.name, sex: member.sex, skill: Number(member.skill) })),
+          averageSkill: team.averageSkill,
+          mixed: team.mixed,
+          key: teamKey(team)
+        })),
+        rounds: scheduleData.schedule,
+        matches: scheduleData.schedule.flatMap((round) => {
+          return round.matches.map((match) => ({
+            round: round.round,
+            court: match.court,
+            teamAKey: match.teamAKey,
+            teamBKey: match.teamBKey
+          }));
+        }),
+        playCounts: scheduleData.playCounts
+      };
+    }
+
+    function renderTeams(session) {
+      if (!session || !session.teams.length) {
+        els.teamsOutput.innerHTML = '<div class="empty">Generate a session to lock in teams for the booking.</div>';
+        return;
+      }
+
+      els.teamsOutput.innerHTML = session.teams.map((team, index) => `
+        <article class="team-card">
+          <header>
+            <span class="team-tag">Team ${index + 1}</span>
+            <span class="badge">${team.mixed ? "Mixed Pair" : "Same-Sex Pair"} · Avg ${team.averageSkill.toFixed(1)}</span>
+          </header>
+          <div class="team-players">
+            ${team.members.map((member) => `
+              <span class="name-chip">${escapeHtml(member.name)}<small>${member.sex} · Skill ${member.skill}</small></span>
+            `).join("")}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderSchedule(session) {
+      if (!session || !session.rounds.length) {
+        els.scheduleOutput.innerHTML = '<div class="empty">The match schedule will appear after team generation.</div>';
+        return;
+      }
+
+      els.scheduleOutput.innerHTML = session.rounds.map((round) => `
+        <article class="round-card">
+          <header>
+            <strong>Round ${round.round}</strong>
+            <span class="badge">${round.matches.length} ${round.matches.length === 1 ? "match" : "matches"}</span>
+          </header>
+          ${round.matches.length ? round.matches.map((match) => `
+            <div class="match-line">
+              <span class="court-tag">Court ${match.court}</span>
+              <span>${escapeHtml(match.teamA.members.map((member) => member.name).join(" / "))}</span>
+              <span class="vs">vs</span>
+              <span>${escapeHtml(match.teamB.members.map((member) => member.name).join(" / "))}</span>
+            </div>
+          `).join("") : '<div class="subtle">No court assignment in this round. All available teams have already had fair rotation opportunities.</div>'}
+        </article>
+      `).join("");
+    }
+
+    function renderHistory() {
+      const sessions = getStoredSessions();
+      if (!sessions.length) {
+        els.historyOutput.innerHTML = '<div class="empty">No previous sessions stored yet.</div>';
+        return;
+      }
+
+      els.historyOutput.innerHTML = sessions.slice(0, 6).map((session) => `
+        <article class="history-card">
+          <strong>${new Date(session.createdAt).toLocaleString()}</strong>
+          <div class="history-line subtle">${session.teams.length} teams · ${session.settings.totalRounds} rounds · ${session.settings.courts} courts</div>
+          <div class="history-line subtle">${session.teams.map((team) => team.members.map((member) => member.name).join(" / ")).join(" · ")}</div>
+        </article>
+      `).join("");
+    }
+
+    function exportSession() {
+      if (!state.currentSession) {
+        alert("Generate a session first so there is something to export.");
+        return;
+      }
+
+      const lines = [];
+      lines.push("UltraPadel Pro Session Export");
+      lines.push(`Created,${state.currentSession.createdAt}`);
+      lines.push(`Courts,${state.currentSession.settings.courts}`);
+      lines.push(`Booking Duration,${state.currentSession.settings.bookingDuration}`);
+      lines.push(`Match Duration,${state.currentSession.settings.matchDuration}`);
+      lines.push(`Total Rounds,${state.currentSession.settings.totalRounds}`);
+      lines.push("");
+      lines.push("Teams");
+      lines.push("Team,Player 1,Sex 1,Skill 1,Player 2,Sex 2,Skill 2,Average Skill");
+
+      state.currentSession.teams.forEach((team, index) => {
+        lines.push([
+          `Team ${index + 1}`,
+          team.members[0].name,
+          team.members[0].sex,
+          team.members[0].skill,
+          team.members[1].name,
+          team.members[1].sex,
+          team.members[1].skill,
+          team.averageSkill.toFixed(1)
+        ].map(csvEscape).join(","));
+      });
+
+      lines.push("");
+      lines.push("Schedule");
+      lines.push("Round,Court,Team A,Team B");
+
+      state.currentSession.rounds.forEach((round) => {
+        if (!round.matches.length) {
+          lines.push([`Round ${round.round}`, "No match", "", ""].map(csvEscape).join(","));
+          return;
+        }
+
+        round.matches.forEach((match) => {
+          lines.push([
+            `Round ${round.round}`,
+            `Court ${match.court}`,
+            match.teamA.members.map((member) => member.name).join(" / "),
+            match.teamB.members.map((member) => member.name).join(" / ")
+          ].map(csvEscape).join(","));
+        });
+      });
+
+      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      link.href = url;
+      link.download = `ultrapadel-pro-session-${stamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      const stringValue = String(value);
+      if (/[",\n]/.test(stringValue)) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    async function handleGenerate() {
+      const players = clonePlayers(state.players).map((player) => ({
+        ...player,
+        name: player.name.trim()
+      }));
+
+      const validationError = validatePlayers(players);
+      const courts = Number(els.courts.value) || 0;
+      const totalRounds = calculateTotalRounds();
+
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+      if (courts < 1) {
+        alert("Number of courts must be at least 1.");
+        return;
+      }
+      if (totalRounds < 1) {
+        alert("Booking duration must allow at least one full match.");
+        return;
+      }
+
+      startShuffleAnimation(players.map((player) => player.name));
+      els.generateBtn.disabled = true;
+
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+
+      const sessions = getStoredSessions();
+      const teams = generateTeams(players, sessions);
+      const scheduleData = scheduleMatches(teams, totalRounds, courts, sessions);
+      const session = buildSession(teams, scheduleData);
+
+      state.currentSession = session;
+      saveSession(session);
+      stopShuffleAnimation("Session locked in");
+
+      renderTeams(session);
+      renderSchedule(session);
+      renderHistory();
+      updateStats();
+
+      els.shuffleState.innerHTML = session.teams.map((team, index) => `
+        <span class="shuffle-pill">Team ${index + 1}: ${escapeHtml(team.members.map((member) => member.name).join(" + "))}</span>
+      `).join("");
+
+      els.generateBtn.disabled = false;
+    }
+
+    function syncPlayerField(target) {
+      const player = state.players.find((entry) => entry.id === target.dataset.id);
+      if (!player) {
+        return;
+      }
+      if (target.dataset.field === "skill") {
+        player.skill = Number(target.value);
+      } else {
+        player[target.dataset.field] = target.value;
+      }
+    }
+
+    function addPlayer(player) {
+      state.players.push(player);
+      renderPlayers();
+    }
+
+    function removePlayer(id) {
+      state.players = state.players.filter((player) => player.id !== id);
+      renderPlayers();
+    }
+
+    function seedPlayers() {
+      state.players = [
+        createPlayer("Alex", "Male", 4),
+        createPlayer("Sophie", "Female", 4),
+        createPlayer("Daniel", "Male", 3),
+        createPlayer("Maya", "Female", 5),
+        createPlayer("Luca", "Male", 2),
+        createPlayer("Chloe", "Female", 3),
+        createPlayer("Tom", "Male", 5),
+        createPlayer("Nina", "Female", 2)
+      ];
+    }
+
+    function attachEvents() {
+      els.addPlayerBtn.addEventListener("click", () => {
+        addPlayer(createPlayer("", "Male", 3));
+      });
+
+      els.generateBtn.addEventListener("click", handleGenerate);
+      els.exportBtn.addEventListener("click", exportSession);
+      els.clearHistoryBtn.addEventListener("click", () => {
+        if (confirm("Clear all stored session history? This will remove previous team-combination memory.")) {
+          clearHistory();
+        }
+      });
+
+      [els.courts, els.bookingDuration, els.matchDuration].forEach((input) => {
+        input.addEventListener("input", updateStats);
+      });
+
+      els.playersList.addEventListener("input", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+          return;
+        }
+        if (target.dataset.id && target.dataset.field) {
+          syncPlayerField(target);
+        }
+      });
+
+      els.playersList.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        const removeId = target.getAttribute("data-remove-id");
+        if (removeId) {
+          removePlayer(removeId);
+        }
+      });
+    }
+
+    function init() {
+      seedPlayers();
+      renderPlayers();
+      renderHistory();
+      updateStats();
+      attachEvents();
+    }
+
+    init();
+  </script>
+</body>
+</html>
