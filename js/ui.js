@@ -19,10 +19,22 @@ export function getElements() {
     signOutBtn: document.getElementById("signOutBtn"),
     authStatusBadge: document.getElementById("authStatusBadge"),
     authMessage: document.getElementById("authMessage"),
+    openAddRosterBtn: document.getElementById("openAddRosterBtn"),
+    openRosterManagerBtn: document.getElementById("openRosterManagerBtn"),
     playersList: document.getElementById("playersList"),
     rosterSelect: document.getElementById("rosterSelect"),
-    rosterPreview: document.getElementById("rosterPreview"),
-    addPlayerBtn: document.getElementById("addPlayerBtn"),
+    rosterModal: document.getElementById("rosterModal"),
+    rosterModalTitle: document.getElementById("rosterModalTitle"),
+    rosterModalSubtitle: document.getElementById("rosterModalSubtitle"),
+    rosterModalMessage: document.getElementById("rosterModalMessage"),
+    closeRosterModalBtn: document.getElementById("closeRosterModalBtn"),
+    rosterForm: document.getElementById("rosterForm"),
+    rosterNameInput: document.getElementById("rosterNameInput"),
+    rosterSexInput: document.getElementById("rosterSexInput"),
+    rosterSkillInput: document.getElementById("rosterSkillInput"),
+    submitRosterBtn: document.getElementById("submitRosterBtn"),
+    cancelRosterEditBtn: document.getElementById("cancelRosterEditBtn"),
+    rosterManagerList: document.getElementById("rosterManagerList"),
     addFromRosterBtn: document.getElementById("addFromRosterBtn"),
     generateBtn: document.getElementById("generateBtn"),
     exportHistoryBtn: document.getElementById("exportHistoryBtn"),
@@ -41,32 +53,22 @@ export function getElements() {
 }
 
 export function renderPlayers(players, els) {
-  els.playersList.innerHTML = "";
-  players.forEach((player) => {
-    const row = document.createElement("div");
-    row.className = "player-row";
-    row.innerHTML = `
-      <div class="player-cell">
-        <label>Name</label>
-        <input type="text" value="${escapeHtml(player.name)}" data-id="${player.id}" data-field="name" placeholder="Player name" />
+  if (!players.length) {
+    els.playersList.innerHTML = '<div class="empty">Add players from the roster to build the current session.</div>';
+    return;
+  }
+
+  els.playersList.innerHTML = players.map((player) => `
+    <article class="session-player-card">
+      <div class="session-player-meta">
+        <span class="session-player-name">${escapeHtml(player.name)}</span>
+        <span class="session-player-detail">${escapeHtml(player.sex)} · Skill ${Number(player.skill)}</span>
       </div>
-      <div class="player-cell">
-        <label>Sex</label>
-        <select data-id="${player.id}" data-field="sex">
-          <option value="Male" ${player.sex === "Male" ? "selected" : ""}>Male</option>
-          <option value="Female" ${player.sex === "Female" ? "selected" : ""}>Female</option>
-        </select>
+      <div class="session-player-actions">
+        <button class="mini-btn danger-btn" type="button" data-remove-id="${player.id}">Remove</button>
       </div>
-      <div class="player-cell">
-        <label>Skill</label>
-        <select data-id="${player.id}" data-field="skill">
-          ${[1, 2, 3, 4, 5].map((value) => `<option value="${value}" ${Number(player.skill) === value ? "selected" : ""}>${value}</option>`).join("")}
-        </select>
-      </div>
-      <button class="icon-btn" type="button" data-remove-id="${player.id}" aria-label="Remove player">×</button>
-    `;
-    els.playersList.appendChild(row);
-  });
+    </article>
+  `).join("");
 }
 
 export function renderRoster(roster, els, normalizeName) {
@@ -81,16 +83,49 @@ export function renderRoster(roster, els, normalizeName) {
   });
 
   if (!orderedRoster.length) {
-    els.rosterPreview.innerHTML = '<div class="empty">New players you enter will be remembered here for future sessions.</div>';
+    els.rosterManagerList.innerHTML = '<div class="empty">No players in the roster yet.</div>';
     return;
   }
 
-  els.rosterPreview.innerHTML = orderedRoster.map((player) => `
-    <span class="roster-chip">
-      <span>${escapeHtml(player.name)}<small>${player.sex} · ${player.skill}</small></span>
-      <button class="roster-remove-btn" type="button" data-roster-remove="${escapeHtml(player.name)}" aria-label="Remove ${escapeHtml(player.name)} from roster">×</button>
-    </span>
+  els.rosterManagerList.innerHTML = orderedRoster.map((player) => `
+    <article class="roster-manager-card">
+      <div class="roster-manager-meta">
+        <span class="roster-manager-name">${escapeHtml(player.name)}</span>
+        <span class="roster-manager-detail">${escapeHtml(player.sex)} · Skill ${Number(player.skill)}</span>
+      </div>
+      <div class="roster-manager-actions">
+        <button class="mini-btn" type="button" data-roster-edit="${player.id}">Edit</button>
+        <button class="mini-btn danger-btn" type="button" data-roster-remove="${player.id}">Remove</button>
+      </div>
+    </article>
   `).join("");
+}
+
+export function openRosterModal(els) {
+  els.rosterModal.classList.remove("hidden");
+  els.rosterModal.setAttribute("aria-hidden", "false");
+}
+
+export function closeRosterModal(els) {
+  els.rosterModal.classList.add("hidden");
+  els.rosterModal.setAttribute("aria-hidden", "true");
+}
+
+export function setRosterModalState(config, els) {
+  els.rosterModalTitle.textContent = config.title;
+  els.rosterModalSubtitle.textContent = config.subtitle;
+  els.submitRosterBtn.textContent = config.submitLabel;
+  els.rosterNameInput.value = config.player?.name || "";
+  els.rosterSexInput.value = config.player?.sex || "Male";
+  els.rosterSkillInput.value = String(config.player?.skill || 3);
+  els.rosterModalMessage.textContent = config.message || "";
+  els.rosterModalMessage.classList.remove("auth-message-success", "auth-message-error");
+  if (config.variant === "success") {
+    els.rosterModalMessage.classList.add("auth-message-success");
+  }
+  if (config.variant === "error") {
+    els.rosterModalMessage.classList.add("auth-message-error");
+  }
 }
 
 export function renderTeams(session, els) {

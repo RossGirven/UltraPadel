@@ -112,6 +112,18 @@ body {
   letter-spacing: 0.02em;
 }
 
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.compact-actions {
+  margin-top: 0;
+}
+
 .auth-panel {
   margin-bottom: 22px;
   padding: 18px;
@@ -198,25 +210,8 @@ textarea:focus {
   box-shadow: 0 0 0 4px rgba(184, 255, 53, 0.18);
 }
 
-.players-head,
-.player-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) 60px;
-  gap: 12px;
-  align-items: end;
-}
-
-.players-head {
-  margin-bottom: 12px;
-  padding: 0 4px;
-  color: var(--muted);
-  font-weight: 700;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.players-list {
+.players-list,
+.session-player-list {
   display: grid;
   gap: 12px;
   margin-bottom: 16px;
@@ -235,7 +230,6 @@ textarea:focus {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: end;
-  margin-bottom: 12px;
 }
 
 .roster-chips {
@@ -278,19 +272,6 @@ textarea:focus {
 
 .roster-remove-btn:hover {
   background: rgba(197, 68, 68, 0.14);
-}
-
-.player-row {
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(216, 223, 220, 0.85);
-  border-radius: 18px;
-  transition: transform 180ms ease, box-shadow 180ms ease;
-}
-
-.player-row:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(17, 23, 21, 0.06);
 }
 
 .icon-btn,
@@ -342,6 +323,59 @@ textarea:focus {
   background: #ffffff;
   color: var(--text);
   border: 1px solid var(--line);
+}
+
+.session-player-card,
+.roster-manager-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(216, 223, 220, 0.85);
+  border-radius: 18px;
+}
+
+.session-player-meta,
+.roster-manager-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-player-name,
+.roster-manager-name {
+  font-weight: 800;
+}
+
+.session-player-detail,
+.roster-manager-detail {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.session-player-actions,
+.roster-manager-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-btn {
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.danger-btn {
+  color: #9d2f2f;
+  border-color: rgba(197, 68, 68, 0.18);
 }
 
 .meta-row {
@@ -522,6 +556,64 @@ textarea:focus {
   line-height: 1.5;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 23, 21, 0.38);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 50;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.modal-card {
+  width: min(920px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(242,246,243,0.98));
+  border: 1px solid rgba(216, 223, 220, 0.95);
+  box-shadow: 0 28px 60px rgba(17, 23, 21, 0.18);
+  padding: 22px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.modal-head h2 {
+  margin-bottom: 6px;
+}
+
+.modal-form {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.modal-roster-list-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.modal-roster-list {
+  display: grid;
+  gap: 10px;
+}
+
+#rosterModalMessage {
+  min-height: 20px;
+  margin-bottom: 10px;
+}
+
 @keyframes rotateGlow {
   to {
     transform: rotate(360deg);
@@ -557,11 +649,15 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
-  .players-head {
-    display: none;
+  .section-head,
+  .session-player-card,
+  .roster-manager-card,
+  .modal-head {
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  .player-row {
+  .roster-controls {
     grid-template-columns: 1fr;
   }
 }

@@ -220,9 +220,8 @@ export async function upsertPlayer(player, currentRoster = []) {
   return dedupedRoster;
 }
 
-export async function removeRosterPlayer(playerName, currentRoster = []) {
-  const normalizedName = normalizeName(playerName);
-  const nextRoster = dedupeRoster(currentRoster).filter((player) => normalizeName(player.name) !== normalizedName);
+export async function removeRosterPlayer(playerId, currentRoster = []) {
+  const nextRoster = dedupeRoster(currentRoster).filter((player) => player.id !== playerId);
   cacheRoster(nextRoster);
 
   const user = await canUseRemote();
@@ -231,7 +230,7 @@ export async function removeRosterPlayer(playerName, currentRoster = []) {
       .from("players")
       .delete()
       .eq("user_id", user.id)
-      .ilike("name", String(playerName || "").trim());
+      .eq("id", playerId);
 
     if (error) {
       console.error("Failed to remove roster player from Supabase:", error);

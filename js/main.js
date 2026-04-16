@@ -1,6 +1,5 @@
 import {
   createPlayer,
-  clonePlayers,
   normalizeName,
   calculateTotalRounds,
   validatePlayers,
@@ -17,6 +16,9 @@ import {
   renderHistory,
   updateStats,
   renderAuthState,
+  openRosterModal,
+  closeRosterModal,
+  setRosterModalState,
   startShuffleAnimation,
   stopShuffleAnimation,
   renderShuffleTeams
@@ -44,6 +46,10 @@ const state = {
   currentUser: null,
   authMessage: "",
   authVariant: "",
+  rosterModalMode: "add",
+  editingRosterId: null,
+  rosterModalMessage: "",
+  rosterModalVariant: "",
   shuffleInterval: null
 };
 
@@ -58,27 +64,8 @@ function getSessionSettings() {
   };
 }
 
-function getSeedPlayers() {
-  return [
-    createPlayer("Alex", "Male", 4),
-    createPlayer("Sophie", "Female", 4),
-    createPlayer("Daniel", "Male", 3),
-    createPlayer("Maya", "Female", 5),
-    createPlayer("Luca", "Male", 2),
-    createPlayer("Chloe", "Female", 3),
-    createPlayer("Tom", "Male", 5),
-    createPlayer("Nina", "Female", 2)
-  ];
-}
-
 function buildInitialPlayers(roster) {
-  if (roster.length) {
-    return roster.slice(0, 8).map((player) => ({
-      ...player,
-      id: player.id || createPlayer("", "Male", 3).id
-    }));
-  }
-  return getSeedPlayers();
+  return [];
 }
 
 function refreshUi() {
@@ -92,6 +79,21 @@ function refreshUi() {
   );
   renderPlayers(state.players, els);
   renderRoster(state.roster, els, normalizeName);
+  setRosterModalState(
+    {
+      title: state.rosterModalMode === "edit" ? "Edit Roster Player" : "Add To Roster",
+      subtitle: state.rosterModalMode === "edit"
+        ? "Update this player and save the changes back to the roster."
+        : "Enter full player details, then submit them to the saved roster.",
+      submitLabel: state.rosterModalMode === "edit" ? "Save Changes" : "Submit To Roster",
+      player: state.editingRosterId
+        ? state.roster.find((player) => player.id === state.editingRosterId)
+        : null,
+      message: state.rosterModalMessage,
+      variant: state.rosterModalVariant
+    },
+    els
+  );
   renderHistory(state.sessions, els);
   renderTeams(state.currentSession, els);
   renderSchedule(state.currentSession, els);
@@ -109,7 +111,10 @@ async function loadData() {
   state.currentUser = await getCurrentUser();
   state.sessions = await getStoredSessions();
   state.roster = await getStoredRoster();
-  state.players = buildInitialPlayers(state.roster);
+  state.players = state.players.filter((player) => state.roster.some((rosterPlayer) => rosterPlayer.id === player.id));
+  if (!state.players.length) {
+    state.players = buildInitialPlayers(state.roster);
+  }
   refreshUi();
 }
 
@@ -146,28 +151,103 @@ function validateAuthCredentials() {
 
 async function persistRosterPlayer(player) {
   state.roster = await upsertPlayer(player, state.roster);
-  renderRoster(state.roster, els, normalizeName);
+  refreshUi();
 }
 
-async function handleRemoveRosterPlayer(playerName) {
-  const trimmedName = String(playerName || "").trim();
-  if (!trimmedName) {
+function resetRosterModal(mode = "add") {
+  state.rosterModalMode = mode;
+  state.editingRosterId = null;
+  state.rosterModalMessage = "";
+  state.rosterModalVariant = "";
+}
+
+function setRosterModalFeedback(message, variant = "") {
+  state.rosterModalMessage = message;
+  state.rosterModalVariant = variant;
+  refreshUi();
+}
+
+function getRosterFormPlayer() {
+  const name = String(els.rosterNameInput.value || "").trim();
+  const sex = els.rosterSexInput.value;
+  const skill = Number(els.rosterSkillInput.value) || 3;
+
+  if (!name) {
+    throw new Error("Enter the player's name.");
+  }
+
+  return {
+    id: state.editingRosterId || createPlayer("", sex, skill).id,
+    name,
+    sex,
+    skill
+  };
+}
+
+async function handleRemoveRosterPlayer(playerId) {
+  const rosterPlayer = state.roster.find((player) => player.id === playerId);
+  if (!rosterPlayer) {
     return;
   }
 
-  if (!confirm(`Remove ${trimmedName} from the saved roster?`)) {
+  if (!confirm(`Remove ${rosterPlayer.name} from the saved roster?`)) {
     return;
   }
 
-  state.roster = await removeRosterPlayer(trimmedName, state.roster);
-  if (normalizeName(els.rosterSelect.value) === normalizeName(trimmedName)) {
+  state.roster = await removeRosterPlayer(playerId, state.roster);
+  state.players = state.players.filter((player) => player.id !== playerId);
+  if (normalizeName(els.rosterSelect.value) === normalizeName(rosterPlayer.name)) {
     els.rosterSelect.value = "";
   }
-  renderRoster(state.roster, els, normalizeName);
+  refreshUi();
+}
+
+function openAddRosterFlow() {
+  resetRosterModal("add");
+  refreshUi();
+  openRosterModal(els);
+  els.rosterNameInput.focus();
+}
+
+function openEditRosterFlow(playerId) {
+  state.rosterModalMode = "edit";
+  state.editingRosterId = playerId;
+  state.rosterModalMessage = "";
+  state.rosterModalVariant = "";
+  refreshUi();
+  openRosterModal(els);
+  els.rosterNameInput.focus();
+}
+
+function openRosterManagerFlow() {
+  resetRosterModal("add");
+  refreshUi();
+  openRosterModal(els);
+}
+
+async function handleRosterFormSubmit(event) {
+  event.preventDefault();
+  try {
+    const player = getRosterFormPlayer();
+    await persistRosterPlayer(player);
+    resetRosterModal("add");
+    els.rosterForm.reset();
+    els.rosterSexInput.value = "Male";
+    els.rosterSkillInput.value = "3";
+    setRosterModalFeedback("Player saved to the roster.", "success");
+  } catch (error) {
+    setRosterModalFeedback(error.message || "Could not save this player to the roster.", "error");
+  }
+}
+
+function closeRosterFlow() {
+  resetRosterModal("add");
+  refreshUi();
+  closeRosterModal(els);
 }
 
 async function handleGenerate() {
-  const players = clonePlayers(state.players).map((player) => ({
+  const players = state.players.map((player) => ({
     ...player,
     name: player.name.trim()
   }));
@@ -194,10 +274,6 @@ async function handleGenerate() {
     window.setTimeout(resolve, 1800);
   });
 
-  for (const player of players) {
-    await persistRosterPlayer(player);
-  }
-
   const teams = generateTeams(players, state.sessions);
   const scheduleData = scheduleMatches(teams, settings.totalRounds, settings.courts, state.sessions);
   const session = buildSession(teams, scheduleData, settings);
@@ -221,23 +297,6 @@ async function handleGenerate() {
   renderShuffleTeams(session, els);
 
   els.generateBtn.disabled = false;
-}
-
-async function syncPlayerField(target) {
-  const player = state.players.find((entry) => entry.id === target.dataset.id);
-  if (!player) {
-    return;
-  }
-
-  if (target.dataset.field === "skill") {
-    player.skill = Number(target.value);
-  } else {
-    player[target.dataset.field] = target.value;
-  }
-
-  if (String(player.name || "").trim()) {
-    await persistRosterPlayer(player);
-  }
 }
 
 function addPlayer(player) {
@@ -268,7 +327,10 @@ function addPlayerFromRoster() {
     return;
   }
 
-  addPlayer(createPlayer(rosterPlayer.name, rosterPlayer.sex, rosterPlayer.skill));
+  addPlayer({
+    ...rosterPlayer,
+    id: rosterPlayer.id
+  });
   els.rosterSelect.value = "";
 }
 
@@ -360,10 +422,17 @@ async function handleSignOut() {
 }
 
 function attachEvents() {
-  els.addPlayerBtn.addEventListener("click", () => {
-    addPlayer(createPlayer("", "Male", 3));
-  });
+  els.openAddRosterBtn.addEventListener("click", openAddRosterFlow);
+  els.openRosterManagerBtn.addEventListener("click", openRosterManagerFlow);
   els.addFromRosterBtn.addEventListener("click", addPlayerFromRoster);
+  els.closeRosterModalBtn.addEventListener("click", closeRosterFlow);
+  els.cancelRosterEditBtn.addEventListener("click", closeRosterFlow);
+  els.rosterForm.addEventListener("submit", handleRosterFormSubmit);
+  els.rosterModal.addEventListener("click", (event) => {
+    if (event.target === els.rosterModal) {
+      closeRosterFlow();
+    }
+  });
 
   els.signUpBtn.addEventListener("click", handleSignUp);
   els.signInBtn.addEventListener("click", handleSignIn);
@@ -409,16 +478,6 @@ function attachEvents() {
     });
   });
 
-  els.playersList.addEventListener("input", async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
-      return;
-    }
-    if (target.dataset.id && target.dataset.field) {
-      await syncPlayerField(target);
-    }
-  });
-
   els.playersList.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
@@ -430,9 +489,15 @@ function attachEvents() {
     }
   });
 
-  els.rosterPreview.addEventListener("click", async (event) => {
+  els.rosterManagerList.addEventListener("click", async (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const editButton = target.closest("[data-roster-edit]");
+    if (editButton instanceof HTMLElement) {
+      openEditRosterFlow(editButton.getAttribute("data-roster-edit"));
       return;
     }
 

@@ -54,17 +54,15 @@
           </div>
         </div>
 
-        <h3>Players</h3>
-        <div class="players-head">
-          <div>Name</div>
-          <div>Sex</div>
-          <div>Skill</div>
-          <div>Remove</div>
+        <div class="section-head">
+          <h3>Roster</h3>
+          <div class="actions compact-actions">
+            <button id="openAddRosterBtn" class="secondary-btn" type="button">Add To Roster</button>
+            <button id="openRosterManagerBtn" class="secondary-btn" type="button">View / Edit Roster</button>
+          </div>
         </div>
-        <div id="playersList" class="players-list"></div>
 
         <div class="roster-panel">
-          <h3>Saved Roster</h3>
           <div class="roster-controls">
             <div class="field">
               <label for="rosterSelect">Add player from roster</label>
@@ -72,15 +70,17 @@
                 <option value="">Select a saved player</option>
               </select>
             </div>
-            <button id="addFromRosterBtn" class="secondary-btn" type="button">Add From Roster</button>
+            <button id="addFromRosterBtn" class="secondary-btn" type="button">Add To Session</button>
           </div>
-          <div id="rosterPreview" class="roster-chips">
-            <div class="empty">New players you enter will be remembered here for future sessions.</div>
-          </div>
+          <p class="footer-note">Players are added to the roster through the roster modal, then selected here for the current session.</p>
+        </div>
+
+        <h3>Current Session Players</h3>
+        <div id="playersList" class="session-player-list">
+          <div class="empty">Add players from the roster to build the current session.</div>
         </div>
 
         <div class="actions">
-          <button id="addPlayerBtn" class="secondary-btn" type="button">Add Player</button>
           <button id="generateBtn" class="primary-btn" type="button">Generate Teams</button>
           <button id="exportHistoryBtn" class="secondary-btn" type="button">Export History</button>
           <button id="importHistoryBtn" class="secondary-btn" type="button">Import History</button>
@@ -137,6 +137,59 @@
           </div>
         </div>
       </section>
+    </div>
+  </div>
+
+  <div id="rosterModal" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="rosterModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="rosterModalTitle">Roster</h2>
+          <p id="rosterModalSubtitle" class="footer-note">Add or edit players in your saved roster.</p>
+        </div>
+        <button id="closeRosterModalBtn" class="icon-btn" type="button" aria-label="Close roster modal">×</button>
+      </div>
+
+      <div id="rosterModalMessage" class="footer-note"></div>
+
+      <form id="rosterForm" class="modal-form">
+        <div class="auth-grid">
+          <div class="field">
+            <label for="rosterNameInput">Name</label>
+            <input id="rosterNameInput" type="text" placeholder="Player name" />
+          </div>
+          <div class="field">
+            <label for="rosterSexInput">Sex</label>
+            <select id="rosterSexInput">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="rosterSkillInput">Skill</label>
+            <select id="rosterSkillInput">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions compact-actions">
+          <button id="submitRosterBtn" class="primary-btn" type="submit">Submit To Roster</button>
+          <button id="cancelRosterEditBtn" class="secondary-btn" type="button">Cancel</button>
+        </div>
+      </form>
+
+      <div class="modal-roster-list-wrap">
+        <div class="section-head">
+          <h3>Current Roster</h3>
+        </div>
+        <div id="rosterManagerList" class="modal-roster-list">
+          <div class="empty">No players in the roster yet.</div>
+        </div>
+      </div>
     </div>
   </div>
 
