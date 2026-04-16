@@ -76,6 +76,22 @@ function normalizeRosterPlayer(player) {
   };
 }
 
+function dedupeRoster(roster) {
+  const byId = new Map();
+  const byName = new Map();
+
+  roster.forEach((player) => {
+    const normalized = normalizeRosterPlayer(player);
+    byId.set(normalized.id, normalized);
+  });
+
+  byId.forEach((player) => {
+    byName.set(normalizeName(player.name), player);
+  });
+
+  return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 async function canUseRemote() {
   if (!navigator.onLine || !isSupabaseConfigured() || !supabase) {
     return null;
@@ -109,7 +125,7 @@ export async function getStoredSessions() {
 }
 
 export async function getStoredRoster() {
-  const localRoster = getLocalRoster();
+  const localRoster = dedupeRoster(getLocalRoster());
   const user = await canUseRemote();
 
   if (!user) {
@@ -126,7 +142,7 @@ export async function getStoredRoster() {
     return localRoster;
   }
 
-  const roster = (data || []).map(normalizeRosterPlayer);
+  const roster = dedupeRoster((data || []).map(normalizeRosterPlayer));
   cacheRoster(roster);
   return roster;
 }
@@ -165,7 +181,7 @@ export async function saveSession(session) {
 }
 
 export async function saveRoster(roster) {
-  const normalizedRoster = roster.map(normalizeRosterPlayer);
+  const normalizedRoster = dedupeRoster(roster.map(normalizeRosterPlayer));
   cacheRoster(normalizedRoster);
 
   const user = await canUseRemote();
@@ -183,28 +199,30 @@ export async function saveRoster(roster) {
 }
 
 export async function upsertPlayer(player, currentRoster = []) {
-  const nextRoster = [...currentRoster];
+  const nextRoster = dedupeRoster(currentRoster);
   const name = String(player.name || "").trim();
   if (!name) {
     return nextRoster;
   }
 
   const incoming = normalizeRosterPlayer({ ...player, name });
-  const existingIndex = nextRoster.findIndex((entry) => normalizeName(entry.name) === normalizeName(name));
+  const existingIndex = nextRoster.findIndex((entry) => {
+    return entry.id === incoming.id || normalizeName(entry.name) === normalizeName(name);
+  });
   if (existingIndex >= 0) {
     nextRoster[existingIndex] = { ...nextRoster[existingIndex], ...incoming };
   } else {
     nextRoster.push(incoming);
   }
 
-  nextRoster.sort((a, b) => a.name.localeCompare(b.name));
-  await saveRoster(nextRoster);
-  return nextRoster;
+  const dedupedRoster = dedupeRoster(nextRoster);
+  await saveRoster(dedupedRoster);
+  return dedupedRoster;
 }
 
 export async function removeRosterPlayer(playerName, currentRoster = []) {
   const normalizedName = normalizeName(playerName);
-  const nextRoster = currentRoster.filter((player) => normalizeName(player.name) !== normalizedName);
+  const nextRoster = dedupeRoster(currentRoster).filter((player) => normalizeName(player.name) !== normalizedName);
   cacheRoster(nextRoster);
 
   const user = await canUseRemote();
@@ -319,8 +337,8 @@ export async function importHistoryFromText(rawText, currentRoster = []) {
   cacheSessions(mergedSessions);
   await saveImportedSessions(sessionsToSave);
 
-  const incomingRoster = Array.isArray(payload.roster) ? payload.roster.map(normalizeRosterPlayer) : [];
-  const rosterMap = new Map([...currentRoster, ...getLocalRoster()].map((player) => [
+  const incomingRoster = Array.isArray(payload.roster) ? dedupeRoster(payload.roster.map(normalizeRosterPlayer)) : [];
+  const rosterMap = new Map(dedupeRoster([...currentRoster, ...getLocalRoster()]).map((player) => [
     normalizeName(player.name),
     normalizeRosterPlayer(player)
   ]));
@@ -349,7 +367,7 @@ export async function importHistoryFromText(rawText, currentRoster = []) {
     });
   });
 
-  const mergedRoster = Array.from(rosterMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const mergedRoster = dedupeRoster(Array.from(rosterMap.values()));
   cacheRoster(mergedRoster);
   await saveImportedRoster(mergedRoster);
 
@@ -368,7 +386,7 @@ export async function syncLocalCacheToSupabase() {
   }
 
   const localSessions = getLocalSessions().map(normalizeSession);
-  const localRoster = getLocalRoster();
+  const localRoster = dedupeRoster(getLocalRoster());
   await saveImportedSessions(localSessions);
   await saveImportedRoster(localRoster);
 }
