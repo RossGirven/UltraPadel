@@ -86,7 +86,10 @@ export function renderRoster(roster, els, normalizeName) {
   }
 
   els.rosterPreview.innerHTML = orderedRoster.map((player) => `
-    <span class="roster-chip">${escapeHtml(player.name)}<small>${player.sex} · ${player.skill}</small></span>
+    <span class="roster-chip">
+      <span>${escapeHtml(player.name)}<small>${player.sex} · ${player.skill}</small></span>
+      <button class="roster-remove-btn" type="button" data-roster-remove="${escapeHtml(player.name)}" aria-label="Remove ${escapeHtml(player.name)} from roster">×</button>
+    </span>
   `).join("");
 }
 

@@ -261,6 +261,25 @@ textarea:focus {
   font-weight: 700;
 }
 
+.roster-remove-btn {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(17, 23, 21, 0.08);
+  color: #7a2323;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.roster-remove-btn:hover {
+  background: rgba(197, 68, 68, 0.14);
+}
+
 .player-row {
   padding: 14px;
   background: rgba(255, 255, 255, 0.82);

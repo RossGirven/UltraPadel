@@ -26,6 +26,7 @@ import {
   getStoredRoster,
   saveSession,
   upsertPlayer,
+  removeRosterPlayer,
   clearHistory,
   getExportableHistoryPayload,
   importHistoryFromText,
@@ -145,6 +146,23 @@ function validateAuthCredentials() {
 
 async function persistRosterPlayer(player) {
   state.roster = await upsertPlayer(player, state.roster);
+  renderRoster(state.roster, els, normalizeName);
+}
+
+async function handleRemoveRosterPlayer(playerName) {
+  const trimmedName = String(playerName || "").trim();
+  if (!trimmedName) {
+    return;
+  }
+
+  if (!confirm(`Remove ${trimmedName} from the saved roster?`)) {
+    return;
+  }
+
+  state.roster = await removeRosterPlayer(trimmedName, state.roster);
+  if (normalizeName(els.rosterSelect.value) === normalizeName(trimmedName)) {
+    els.rosterSelect.value = "";
+  }
   renderRoster(state.roster, els, normalizeName);
 }
 
@@ -410,6 +428,20 @@ function attachEvents() {
     if (removeId) {
       removePlayer(removeId);
     }
+  });
+
+  els.rosterPreview.addEventListener("click", async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const button = target.closest("[data-roster-remove]");
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+
+    await handleRemoveRosterPlayer(button.getAttribute("data-roster-remove"));
   });
 
   window.addEventListener("online", async () => {
