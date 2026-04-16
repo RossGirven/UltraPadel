@@ -112,6 +112,44 @@ body {
   letter-spacing: 0.02em;
 }
 
+.auth-panel {
+  margin-bottom: 22px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(216, 223, 220, 0.9);
+}
+
+.auth-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.auth-heading h2 {
+  margin-bottom: 0;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.auth-actions {
+  margin-top: 12px;
+}
+
+.auth-message-success {
+  color: #2c6b14;
+}
+
+.auth-message-error {
+  color: #b22f2f;
+}
+
 .config-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -495,7 +533,8 @@ textarea:focus {
   }
 
   .config-grid,
-  .meta-row {
+  .meta-row,
+  .auth-grid {
     grid-template-columns: 1fr;
   }
 

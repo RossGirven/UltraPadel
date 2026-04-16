@@ -16,6 +16,7 @@ import {
   renderSchedule,
   renderHistory,
   updateStats,
+  renderAuthState,
   startShuffleAnimation,
   stopShuffleAnimation,
   renderShuffleTeams
@@ -40,6 +41,8 @@ const state = {
   sessions: [],
   currentSession: null,
   currentUser: null,
+  authMessage: "",
+  authVariant: "",
   shuffleInterval: null
 };
 
@@ -78,6 +81,14 @@ function buildInitialPlayers(roster) {
 }
 
 function refreshUi() {
+  renderAuthState(
+    {
+      currentUser: state.currentUser,
+      message: state.authMessage,
+      variant: state.authVariant
+    },
+    els
+  );
   renderPlayers(state.players, els);
   renderRoster(state.roster, els, normalizeName);
   renderHistory(state.sessions, els);
@@ -99,6 +110,37 @@ async function loadData() {
   state.roster = await getStoredRoster();
   state.players = buildInitialPlayers(state.roster);
   refreshUi();
+}
+
+function getAuthCredentials() {
+  return {
+    email: String(els.authEmail.value || "").trim(),
+    password: String(els.authPassword.value || "")
+  };
+}
+
+function setAuthFeedback(message, variant = "") {
+  state.authMessage = message;
+  state.authVariant = variant;
+  renderAuthState(
+    {
+      currentUser: state.currentUser,
+      message: state.authMessage,
+      variant: state.authVariant
+    },
+    els
+  );
+}
+
+function validateAuthCredentials() {
+  const { email, password } = getAuthCredentials();
+  if (!email) {
+    throw new Error("Enter your email address.");
+  }
+  if (!password) {
+    throw new Error("Enter your password.");
+  }
+  return { email, password };
 }
 
 async function persistRosterPlayer(player) {
@@ -259,12 +301,55 @@ function handleImportHistoryFile(file) {
   reader.readAsText(file);
 }
 
+async function handleSignUp() {
+  try {
+    const { email, password } = validateAuthCredentials();
+    setAuthFeedback("Creating your account...", "");
+    await signUp(email, password);
+    state.currentUser = await getCurrentUser();
+    await syncLocalCacheToSupabase();
+    await loadData();
+    setAuthFeedback("Account created. Check your email if Supabase confirmation is enabled, then sign in if required.", "success");
+  } catch (error) {
+    setAuthFeedback(error.message || "Could not create your account.", "error");
+  }
+}
+
+async function handleSignIn() {
+  try {
+    const { email, password } = validateAuthCredentials();
+    setAuthFeedback("Signing you in...", "");
+    await signIn(email, password);
+    state.currentUser = await getCurrentUser();
+    await syncLocalCacheToSupabase();
+    await loadData();
+    setAuthFeedback("Signed in successfully.", "success");
+  } catch (error) {
+    setAuthFeedback(error.message || "Could not sign you in.", "error");
+  }
+}
+
+async function handleSignOut() {
+  try {
+    await signOut();
+    state.currentUser = null;
+    state.currentSession = null;
+    await loadData();
+    setAuthFeedback("Signed out. The app is now using local browser storage.", "success");
+  } catch (error) {
+    setAuthFeedback(error.message || "Could not sign you out.", "error");
+  }
+}
+
 function attachEvents() {
   els.addPlayerBtn.addEventListener("click", () => {
     addPlayer(createPlayer("", "Male", 3));
   });
   els.addFromRosterBtn.addEventListener("click", addPlayerFromRoster);
 
+  els.signUpBtn.addEventListener("click", handleSignUp);
+  els.signInBtn.addEventListener("click", handleSignIn);
+  els.signOutBtn.addEventListener("click", handleSignOut);
   els.generateBtn.addEventListener("click", handleGenerate);
   els.exportHistoryBtn.addEventListener("click", exportHistory);
   els.importHistoryBtn.addEventListener("click", () => {
@@ -337,6 +422,7 @@ async function init() {
   await initAuth();
   attachEvents();
   await loadData();
+  setAuthFeedback("", "");
 
   window.UltraPadelAuth = {
     signUp,

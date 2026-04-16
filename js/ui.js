@@ -12,6 +12,13 @@ export function getElements() {
     courts: document.getElementById("courts"),
     bookingDuration: document.getElementById("bookingDuration"),
     matchDuration: document.getElementById("matchDuration"),
+    authEmail: document.getElementById("authEmail"),
+    authPassword: document.getElementById("authPassword"),
+    signUpBtn: document.getElementById("signUpBtn"),
+    signInBtn: document.getElementById("signInBtn"),
+    signOutBtn: document.getElementById("signOutBtn"),
+    authStatusBadge: document.getElementById("authStatusBadge"),
+    authMessage: document.getElementById("authMessage"),
     playersList: document.getElementById("playersList"),
     rosterSelect: document.getElementById("rosterSelect"),
     rosterPreview: document.getElementById("rosterPreview"),
@@ -147,6 +154,34 @@ export function updateStats(meta, els) {
   els.roundsStat.textContent = String(meta.rounds);
   els.teamsStat.textContent = String(meta.currentSession ? meta.currentSession.teams.length : 0);
   els.historyStat.textContent = String(meta.sessions.length);
+}
+
+export function renderAuthState(auth, els) {
+  const isSignedIn = Boolean(auth.currentUser);
+  els.authStatusBadge.textContent = isSignedIn ? "Signed In" : "Local Mode";
+  els.signOutBtn.disabled = !isSignedIn;
+  els.signInBtn.disabled = false;
+  els.signUpBtn.disabled = false;
+
+  els.authMessage.classList.remove("auth-message-success", "auth-message-error");
+  if (auth.variant === "success") {
+    els.authMessage.classList.add("auth-message-success");
+  }
+  if (auth.variant === "error") {
+    els.authMessage.classList.add("auth-message-error");
+  }
+
+  if (auth.message) {
+    els.authMessage.textContent = auth.message;
+    return;
+  }
+
+  if (isSignedIn) {
+    els.authMessage.textContent = `Signed in as ${auth.currentUser.email}. Your roster and session history now sync with Supabase.`;
+    return;
+  }
+
+  els.authMessage.textContent = "Sign in to store your roster and session history in Supabase. If you stay signed out, the app falls back to local browser storage.";
 }
 
 export function startShuffleAnimation(playerNames, els, state) {

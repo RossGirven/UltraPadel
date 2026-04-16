@@ -15,6 +15,29 @@
 
     <div class="layout">
       <section class="panel">
+        <div class="auth-panel">
+          <div class="auth-heading">
+            <h2>Account</h2>
+            <span id="authStatusBadge" class="badge">Local Mode</span>
+          </div>
+          <div class="auth-grid">
+            <div class="field">
+              <label for="authEmail">Email</label>
+              <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+            </div>
+            <div class="field">
+              <label for="authPassword">Password</label>
+              <input id="authPassword" type="password" autocomplete="current-password" placeholder="Enter password" />
+            </div>
+          </div>
+          <div class="actions auth-actions">
+            <button id="signUpBtn" class="secondary-btn" type="button">Sign Up</button>
+            <button id="signInBtn" class="primary-btn" type="button">Sign In</button>
+            <button id="signOutBtn" class="secondary-btn" type="button">Sign Out</button>
+          </div>
+          <p id="authMessage" class="footer-note">Sign in to store your roster and session history in Supabase. If you stay signed out, the app falls back to local browser storage.</p>
+        </div>
+
         <h2>Session Setup</h2>
         <div class="config-grid">
           <div class="field">
@@ -118,8 +141,8 @@
   </div>
 
   <script>
-    window.ULTRAPADEL_SUPABASE_URL = window.ULTRAPADEL_SUPABASE_URL || "YOUR_SUPABASE_URL";
-    window.ULTRAPADEL_SUPABASE_ANON_KEY = window.ULTRAPADEL_SUPABASE_ANON_KEY || "YOUR_SUPABASE_ANON_KEY";
+    window.ULTRAPADEL_SUPABASE_URL = window.ULTRAPADEL_SUPABASE_URL || "https://tbmkvmotnwwyfvcqvjlt.supabase.co";
+    window.ULTRAPADEL_SUPABASE_ANON_KEY = window.ULTRAPADEL_SUPABASE_ANON_KEY || "sb_publishable_FzFU14_voXOLGM_ulzw95w_0Tacknk5";
   </script>
   <script type="module" src="./js/main.js"></script>
 </body>
