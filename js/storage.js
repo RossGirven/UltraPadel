@@ -4,6 +4,7 @@ import { isSameSession, normalizeName, teamKey, ensureUuid } from "./logic.js";
 
 const SESSION_CACHE_KEY = "ultrapadel-pro-sessions";
 const ROSTER_CACHE_KEY = "ultrapadel-pro-roster";
+const ROSTER_DELETION_QUEUE_KEY = "ultrapadel-pro-roster-deletions";
 const HISTORY_LIMIT = 40;
 
 function readLocalJson(key, fallback) {
@@ -33,6 +34,33 @@ function cacheSessions(sessions) {
 
 function cacheRoster(roster) {
   writeLocalJson(ROSTER_CACHE_KEY, roster);
+}
+
+function getQueuedRosterDeletionIds() {
+  return readLocalJson(ROSTER_DELETION_QUEUE_KEY, []).filter((value) => typeof value === "string" && value);
+}
+
+function cacheQueuedRosterDeletionIds(ids) {
+  writeLocalJson(ROSTER_DELETION_QUEUE_KEY, Array.from(new Set(ids)));
+}
+
+function queueRosterDeletion(playerId) {
+  if (!playerId) {
+    return;
+  }
+
+  const queuedIds = getQueuedRosterDeletionIds();
+  queuedIds.push(playerId);
+  cacheQueuedRosterDeletionIds(queuedIds);
+}
+
+function clearQueuedRosterDeletion(playerId) {
+  if (!playerId) {
+    return;
+  }
+
+  const queuedIds = getQueuedRosterDeletionIds().filter((id) => id !== playerId);
+  cacheQueuedRosterDeletionIds(queuedIds);
 }
 
 function mergeSessionShape(row) {
@@ -234,7 +262,12 @@ export async function removeRosterPlayer(playerId, currentRoster = []) {
 
     if (error) {
       console.error("Failed to remove roster player from Supabase:", error);
+      queueRosterDeletion(playerId);
+    } else {
+      clearQueuedRosterDeletion(playerId);
     }
+  } else {
+    queueRosterDeletion(playerId);
   }
 
   return nextRoster;
@@ -382,6 +415,21 @@ export async function syncLocalCacheToSupabase() {
   const user = await canUseRemote();
   if (!user) {
     return;
+  }
+
+  const queuedRosterDeletionIds = getQueuedRosterDeletionIds();
+  if (queuedRosterDeletionIds.length) {
+    const { error } = await supabase
+      .from("players")
+      .delete()
+      .eq("user_id", user.id)
+      .in("id", queuedRosterDeletionIds);
+
+    if (error) {
+      console.error("Failed to sync queued roster deletions:", error);
+    } else {
+      cacheQueuedRosterDeletionIds([]);
+    }
   }
 
   const localSessions = getLocalSessions().map(normalizeSession);

@@ -270,33 +270,39 @@ async function handleGenerate() {
   startShuffleAnimation(players.map((player) => player.name), els, state);
   els.generateBtn.disabled = true;
 
-  await new Promise((resolve) => {
-    window.setTimeout(resolve, 1800);
-  });
+  try {
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, 1800);
+    });
 
-  const teams = generateTeams(players, state.sessions);
-  const scheduleData = scheduleMatches(teams, settings.totalRounds, settings.courts, state.sessions);
-  const session = buildSession(teams, scheduleData, settings);
+    const teams = generateTeams(players, state.sessions);
+    const scheduleData = scheduleMatches(teams, settings.totalRounds, settings.courts, state.sessions);
+    const session = buildSession(teams, scheduleData, settings);
 
-  state.currentSession = session;
-  await saveSession(session);
-  state.sessions = await getStoredSessions();
+    state.currentSession = session;
+    await saveSession(session);
+    state.sessions = await getStoredSessions();
 
-  stopShuffleAnimation(els, state, "Session locked in");
-  renderTeams(session, els);
-  renderSchedule(session, els);
-  renderHistory(state.sessions, els);
-  updateStats(
-    {
-      rounds: settings.totalRounds,
-      currentSession: state.currentSession,
-      sessions: state.sessions
-    },
-    els
-  );
-  renderShuffleTeams(session, els);
-
-  els.generateBtn.disabled = false;
+    stopShuffleAnimation(els, state, "Session locked in");
+    renderTeams(session, els);
+    renderSchedule(session, els);
+    renderHistory(state.sessions, els);
+    updateStats(
+      {
+        rounds: settings.totalRounds,
+        currentSession: state.currentSession,
+        sessions: state.sessions
+      },
+      els
+    );
+    renderShuffleTeams(session, els);
+  } catch (error) {
+    stopShuffleAnimation(els, state, "Generation failed");
+    els.shuffleState.innerHTML = "";
+    alert(error.message || "Something went wrong while generating the session.");
+  } finally {
+    els.generateBtn.disabled = false;
+  }
 }
 
 function addPlayer(player) {
