@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UltraPadel Pro</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <div class="logo">UltraPadel <span class="pro">Pro</span></div>
+      <p>Create balanced fixed doubles teams, schedule fair court rotations, and keep session history so the app avoids recycling the same pairings unless it genuinely has to.</p>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>Session Setup</h2>
+        <div class="config-grid">
+          <div class="field">
+            <label for="courts">Number of courts</label>
+            <input id="courts" type="number" min="1" step="1" value="2" />
+          </div>
+          <div class="field">
+            <label for="bookingDuration">Total booking duration (minutes)</label>
+            <input id="bookingDuration" type="number" min="1" step="1" value="90" />
+          </div>
+          <div class="field">
+            <label for="matchDuration">Match duration (minutes)</label>
+            <input id="matchDuration" type="number" min="1" step="1" value="20" />
+          </div>
+        </div>
+
+        <h3>Players</h3>
+        <div class="players-head">
+          <div>Name</div>
+          <div>Sex</div>
+          <div>Skill</div>
+          <div>Remove</div>
+        </div>
+        <div id="playersList" class="players-list"></div>
+
+        <div class="roster-panel">
+          <h3>Saved Roster</h3>
+          <div class="roster-controls">
+            <div class="field">
+              <label for="rosterSelect">Add player from roster</label>
+              <select id="rosterSelect">
+                <option value="">Select a saved player</option>
+              </select>
+            </div>
+            <button id="addFromRosterBtn" class="secondary-btn" type="button">Add From Roster</button>
+          </div>
+          <div id="rosterPreview" class="roster-chips">
+            <div class="empty">New players you enter will be remembered here for future sessions.</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="addPlayerBtn" class="secondary-btn" type="button">Add Player</button>
+          <button id="generateBtn" class="primary-btn" type="button">Generate Teams</button>
+          <button id="exportHistoryBtn" class="secondary-btn" type="button">Export History</button>
+          <button id="importHistoryBtn" class="secondary-btn" type="button">Import History</button>
+          <input id="importHistoryInput" type="file" accept=".json,application/json" hidden />
+          <button id="clearHistoryBtn" class="secondary-btn" type="button">Clear Stored History</button>
+        </div>
+
+        <div class="meta-row">
+          <div class="stat-card">
+            <span>Rounds Available</span>
+            <strong id="roundsStat">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Session Teams</span>
+            <strong id="teamsStat">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Stored Sessions</span>
+            <strong id="historyStat">0</strong>
+          </div>
+        </div>
+
+        <p class="footer-note">Teams are fixed once generated. Scheduling rotates those same teams through the available courts without reshuffling them mid-session.</p>
+      </section>
+
+      <section class="panel">
+        <div class="shuffle-box">
+          <div class="shuffle-inner">
+            <strong id="shuffleTitle">Ready to build a session</strong>
+            <div id="shuffleState" class="shuffle-state"></div>
+          </div>
+        </div>
+
+        <div class="results-grid">
+          <div>
+            <h2>Fixed Teams</h2>
+            <div id="teamsOutput" class="team-list">
+              <div class="empty">Generate a session to lock in teams for the booking.</div>
+            </div>
+          </div>
+
+          <div>
+            <h2>Match Schedule</h2>
+            <div id="scheduleOutput" class="schedule-list">
+              <div class="empty">The match schedule will appear after team generation.</div>
+            </div>
+          </div>
+
+          <div>
+            <h2>Recent Sessions</h2>
+            <div id="historyOutput" class="history-list">
+              <div class="empty">No previous sessions stored yet.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    window.ULTRAPADEL_SUPABASE_URL = window.ULTRAPADEL_SUPABASE_URL || "YOUR_SUPABASE_URL";
+    window.ULTRAPADEL_SUPABASE_ANON_KEY = window.ULTRAPADEL_SUPABASE_ANON_KEY || "YOUR_SUPABASE_ANON_KEY";
+  </script>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

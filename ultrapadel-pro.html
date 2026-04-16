@@ -565,7 +565,9 @@
         <div class="actions">
           <button id="addPlayerBtn" class="secondary-btn" type="button">Add Player</button>
           <button id="generateBtn" class="primary-btn" type="button">Generate Teams</button>
-          <button id="exportBtn" class="secondary-btn" type="button">Export Session</button>
+          <button id="exportHistoryBtn" class="secondary-btn" type="button">Export History</button>
+          <button id="importHistoryBtn" class="secondary-btn" type="button">Import History</button>
+          <input id="importHistoryInput" type="file" accept=".json,application/json" hidden />
           <button id="clearHistoryBtn" class="secondary-btn" type="button">Clear Stored History</button>
         </div>
 
@@ -644,7 +646,9 @@
       addPlayerBtn: document.getElementById("addPlayerBtn"),
       addFromRosterBtn: document.getElementById("addFromRosterBtn"),
       generateBtn: document.getElementById("generateBtn"),
-      exportBtn: document.getElementById("exportBtn"),
+      exportHistoryBtn: document.getElementById("exportHistoryBtn"),
+      importHistoryBtn: document.getElementById("importHistoryBtn"),
+      importHistoryInput: document.getElementById("importHistoryInput"),
       clearHistoryBtn: document.getElementById("clearHistoryBtn"),
       shuffleTitle: document.getElementById("shuffleTitle"),
       shuffleState: document.getElementById("shuffleState"),
@@ -717,6 +721,10 @@
 
     function saveSession(session) {
       const sessions = getStoredSessions();
+      const existingIndex = sessions.findIndex((entry) => isSameSession(entry, session));
+      if (existingIndex >= 0) {
+        sessions.splice(existingIndex, 1);
+      }
       sessions.unshift(session);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions.slice(0, 40)));
     }
@@ -747,6 +755,15 @@
         });
       });
       return historyMap;
+    }
+
+    function isSameSession(left, right) {
+      if (!left || !right) {
+        return false;
+      }
+      const leftTeams = (left.teams || []).map((team) => team.key || teamKey(team)).sort().join("::");
+      const rightTeams = (right.teams || []).map((team) => team.key || teamKey(team)).sort().join("::");
+      return left.createdAt === right.createdAt && leftTeams === rightTeams;
     }
 
     function renderPlayers() {
@@ -1241,74 +1258,142 @@
       `).join("");
     }
 
-    function exportSession() {
-      if (!state.currentSession) {
-        alert("Generate a session first so there is something to export.");
+    function getExportableHistoryPayload() {
+      const sessions = getStoredSessions();
+      if (state.currentSession && !sessions.some((session) => isSameSession(session, state.currentSession))) {
+        sessions.unshift(state.currentSession);
+      }
+
+      return {
+        app: "UltraPadel Pro",
+        type: "history-backup",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        sessions,
+        roster: state.roster
+      };
+    }
+
+    function exportHistory() {
+      const payload = getExportableHistoryPayload();
+      if (!payload.sessions.length && !payload.roster.length) {
+        alert("There is no saved history to export yet.");
         return;
       }
 
-      const lines = [];
-      lines.push("UltraPadel Pro Session Export");
-      lines.push(`Created,${state.currentSession.createdAt}`);
-      lines.push(`Courts,${state.currentSession.settings.courts}`);
-      lines.push(`Booking Duration,${state.currentSession.settings.bookingDuration}`);
-      lines.push(`Match Duration,${state.currentSession.settings.matchDuration}`);
-      lines.push(`Total Rounds,${state.currentSession.settings.totalRounds}`);
-      lines.push("");
-      lines.push("Teams");
-      lines.push("Team,Player 1,Sex 1,Skill 1,Player 2,Sex 2,Skill 2,Average Skill");
-
-      state.currentSession.teams.forEach((team, index) => {
-        lines.push([
-          `Team ${index + 1}`,
-          team.members[0].name,
-          team.members[0].sex,
-          team.members[0].skill,
-          team.members[1].name,
-          team.members[1].sex,
-          team.members[1].skill,
-          team.averageSkill.toFixed(1)
-        ].map(csvEscape).join(","));
-      });
-
-      lines.push("");
-      lines.push("Schedule");
-      lines.push("Round,Court,Team A,Team B");
-
-      state.currentSession.rounds.forEach((round) => {
-        if (!round.matches.length) {
-          lines.push([`Round ${round.round}`, "No match", "", ""].map(csvEscape).join(","));
-          return;
-        }
-
-        round.matches.forEach((match) => {
-          lines.push([
-            `Round ${round.round}`,
-            `Court ${match.court}`,
-            match.teamA.members.map((member) => member.name).join(" / "),
-            match.teamB.members.map((member) => member.name).join(" / ")
-          ].map(csvEscape).join(","));
-        });
-      });
-
-      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
       link.href = url;
-      link.download = `ultrapadel-pro-session-${stamp}.csv`;
+      link.download = `ultrapadel-pro-history-${stamp}.json`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
     }
 
-    function csvEscape(value) {
-      const stringValue = String(value);
-      if (/[",\n]/.test(stringValue)) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
+    function importHistoryFromText(rawText) {
+      let payload;
+      try {
+        payload = JSON.parse(rawText);
+      } catch (error) {
+        throw new Error("This file is not valid JSON.");
       }
-      return stringValue;
+
+      if (!payload || payload.app !== "UltraPadel Pro" || payload.type !== "history-backup") {
+        throw new Error("This file was not recognized as an UltraPadel Pro history export.");
+      }
+
+      const incomingSessions = Array.isArray(payload.sessions) ? payload.sessions : [];
+      const incomingRoster = Array.isArray(payload.roster) ? payload.roster : [];
+      const storedSessions = getStoredSessions();
+      const mergedSessions = [...storedSessions];
+      let addedSessions = 0;
+
+      incomingSessions.forEach((session) => {
+        if (!mergedSessions.some((existing) => isSameSession(existing, session))) {
+          mergedSessions.push(session);
+          addedSessions += 1;
+        }
+      });
+
+      mergedSessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedSessions.slice(0, 40)));
+
+      const rosterMap = new Map(state.roster.map((player) => [normalizeName(player.name), {
+        name: player.name,
+        sex: player.sex,
+        skill: Number(player.skill)
+      }]));
+      let addedRosterPlayers = 0;
+
+      incomingRoster.forEach((player) => {
+        const name = String(player && player.name || "").trim();
+        if (!name) {
+          return;
+        }
+        const key = normalizeName(name);
+        if (!rosterMap.has(key)) {
+          addedRosterPlayers += 1;
+        }
+        rosterMap.set(key, {
+          name,
+          sex: player.sex,
+          skill: Number(player.skill)
+        });
+      });
+
+      mergedSessions.forEach((session) => {
+        (session.teams || []).forEach((team) => {
+          (team.members || []).forEach((member) => {
+            const name = String(member && member.name || "").trim();
+            if (!name) {
+              return;
+            }
+            const key = normalizeName(name);
+            if (!rosterMap.has(key)) {
+              addedRosterPlayers += 1;
+            }
+            rosterMap.set(key, {
+              name,
+              sex: member.sex,
+              skill: Number(member.skill)
+            });
+          });
+        });
+      });
+
+      state.roster = Array.from(rosterMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+      saveRoster(state.roster);
+      renderRoster();
+      renderHistory();
+      updateStats();
+
+      return { addedSessions, addedRosterPlayers };
+    }
+
+    function handleImportHistoryFile(file) {
+      if (!file) {
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const result = importHistoryFromText(String(reader.result || ""));
+          alert(`History import complete. Added ${result.addedSessions} new sessions and ${result.addedRosterPlayers} roster entries.`);
+        } catch (error) {
+          alert(error.message || "The selected history file could not be imported.");
+        } finally {
+          els.importHistoryInput.value = "";
+        }
+      };
+      reader.onerror = () => {
+        alert("The selected file could not be read.");
+        els.importHistoryInput.value = "";
+      };
+      reader.readAsText(file);
     }
 
     function escapeHtml(value) {
@@ -1438,7 +1523,17 @@
       els.addFromRosterBtn.addEventListener("click", addPlayerFromRoster);
 
       els.generateBtn.addEventListener("click", handleGenerate);
-      els.exportBtn.addEventListener("click", exportSession);
+      els.exportHistoryBtn.addEventListener("click", exportHistory);
+      els.importHistoryBtn.addEventListener("click", () => {
+        els.importHistoryInput.click();
+      });
+      els.importHistoryInput.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.files || !target.files[0]) {
+          return;
+        }
+        handleImportHistoryFile(target.files[0]);
+      });
       els.clearHistoryBtn.addEventListener("click", () => {
         if (confirm("Clear all stored session history? This will remove previous team-combination memory.")) {
           clearHistory();
