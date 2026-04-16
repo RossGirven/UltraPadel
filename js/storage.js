@@ -208,6 +208,32 @@ export async function saveSession(session) {
   return normalizedSession;
 }
 
+export async function removeSession(sessionId) {
+  if (!sessionId) {
+    return getLocalSessions().map(normalizeSession);
+  }
+
+  const nextSessions = getLocalSessions()
+    .map(normalizeSession)
+    .filter((session) => session.id !== sessionId);
+  cacheSessions(nextSessions);
+
+  const user = await canUseRemote();
+  if (user) {
+    const { error } = await supabase
+      .from("sessions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("id", sessionId);
+
+    if (error) {
+      console.error("Failed to remove session from Supabase:", error);
+    }
+  }
+
+  return nextSessions;
+}
+
 export async function saveRoster(roster) {
   const normalizedRoster = dedupeRoster(roster.map(normalizeRosterPlayer));
   cacheRoster(normalizedRoster);
