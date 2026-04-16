@@ -37,7 +37,6 @@ export function getElements() {
     rosterManagerList: document.getElementById("rosterManagerList"),
     addFromRosterBtn: document.getElementById("addFromRosterBtn"),
     generateBtn: document.getElementById("generateBtn"),
-    reshuffleBtn: document.getElementById("reshuffleBtn"),
     exportHistoryBtn: document.getElementById("exportHistoryBtn"),
     importHistoryBtn: document.getElementById("importHistoryBtn"),
     importHistoryInput: document.getElementById("importHistoryInput"),
@@ -191,10 +190,7 @@ export function renderHistory(sessions, els) {
 
   els.historyOutput.innerHTML = sessions.slice(0, 6).map((session) => `
     <article class="history-card">
-      <header class="history-card-head">
-        <strong>${new Date(session.createdAt).toLocaleString()}</strong>
-        <button class="history-remove-btn" type="button" data-history-remove="${session.id}" aria-label="Remove session from history">X</button>
-      </header>
+      <strong>${new Date(session.createdAt).toLocaleString()}</strong>
       <div class="history-line subtle">${session.teams.length} teams · ${session.settings.totalRounds} rounds · ${session.settings.courts} courts</div>
       <div class="history-line subtle">${session.teams.map((team) => team.members.map((member) => member.name).join(" / ")).join(" · ")}</div>
     </article>

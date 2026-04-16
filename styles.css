@@ -550,41 +550,12 @@ textarea:focus {
 }
 
 .team-card header,
-.round-card header,
-.history-card-head {
+.round-card header {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   align-items: center;
   margin-bottom: 10px;
-}
-
-.history-card-head strong {
-  min-width: 0;
-}
-
-.history-remove-btn {
-  width: 28px;
-  height: 28px;
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-  border: none;
-  border-radius: 999px;
-  background: rgba(197, 68, 68, 0.12);
-  color: #b22f2f;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 900;
-  line-height: 1;
-  padding: 0;
-  transition: transform 180ms ease, background 180ms ease, color 180ms ease;
-}
-
-.history-remove-btn:hover {
-  background: rgba(197, 68, 68, 0.2);
-  color: #8d1f1f;
-  transform: scale(1.04);
 }
 
 .team-tag,

@@ -27,7 +27,6 @@ import {
   getStoredSessions,
   getStoredRoster,
   saveSession,
-  removeSession,
   upsertPlayer,
   removeRosterPlayer,
   clearHistory,
@@ -53,17 +52,6 @@ const state = {
   rosterModalVariant: "",
   shuffleInterval: null
 };
-
-function invalidateCurrentSession() {
-  if (!state.currentSession) {
-    return;
-  }
-
-  state.currentSession = null;
-  stopShuffleAnimation(els, state, "Ready to build a session");
-  els.shuffleState.innerHTML = "";
-  refreshUi();
-}
 
 function getSessionSettings() {
   const bookingDuration = Number(els.bookingDuration.value) || 0;
@@ -109,7 +97,6 @@ function refreshUi() {
   renderHistory(state.sessions, els);
   renderTeams(state.currentSession, els);
   renderSchedule(state.currentSession, els);
-  els.reshuffleBtn.disabled = !state.currentSession;
   updateStats(
     {
       rounds: getSessionSettings().totalRounds,
@@ -260,10 +247,6 @@ function closeRosterFlow() {
 }
 
 async function handleGenerate() {
-  await runSessionGeneration({ saveToHistory: true });
-}
-
-async function runSessionGeneration({ saveToHistory }) {
   const players = state.players.map((player) => ({
     ...player,
     name: player.name.trim()
@@ -286,7 +269,6 @@ async function runSessionGeneration({ saveToHistory }) {
 
   startShuffleAnimation(players.map((player) => player.name), els, state);
   els.generateBtn.disabled = true;
-  els.reshuffleBtn.disabled = true;
 
   try {
     await new Promise((resolve) => {
@@ -298,12 +280,10 @@ async function runSessionGeneration({ saveToHistory }) {
     const session = buildSession(teams, scheduleData, settings);
 
     state.currentSession = session;
-    if (saveToHistory) {
-      await saveSession(session);
-      state.sessions = await getStoredSessions();
-    }
+    await saveSession(session);
+    state.sessions = await getStoredSessions();
 
-    stopShuffleAnimation(els, state, saveToHistory ? "Session locked in" : "Session reshuffled");
+    stopShuffleAnimation(els, state, "Session locked in");
     renderTeams(session, els);
     renderSchedule(session, els);
     renderHistory(state.sessions, els);
@@ -322,23 +302,16 @@ async function runSessionGeneration({ saveToHistory }) {
     alert(error.message || "Something went wrong while generating the session.");
   } finally {
     els.generateBtn.disabled = false;
-    els.reshuffleBtn.disabled = !state.currentSession;
   }
-}
-
-async function handleReshuffle() {
-  await runSessionGeneration({ saveToHistory: false });
 }
 
 function addPlayer(player) {
   state.players.push(player);
-  invalidateCurrentSession();
   renderPlayers(state.players, els);
 }
 
 function removePlayer(id) {
   state.players = state.players.filter((player) => player.id !== id);
-  invalidateCurrentSession();
   renderPlayers(state.players, els);
 }
 
@@ -454,25 +427,6 @@ async function handleSignOut() {
   }
 }
 
-async function handleRemoveHistorySession(sessionId) {
-  const existingSession = state.sessions.find((session) => session.id === sessionId);
-  if (!existingSession) {
-    return;
-  }
-
-  if (!confirm("Remove this recent session record?")) {
-    return;
-  }
-
-  state.sessions = await removeSession(sessionId);
-  if (state.currentSession?.id === sessionId) {
-    state.currentSession = null;
-    stopShuffleAnimation(els, state, "Ready to build a session");
-    els.shuffleState.innerHTML = "";
-  }
-  refreshUi();
-}
-
 function attachEvents() {
   els.openAddRosterBtn.addEventListener("click", openAddRosterFlow);
   els.openRosterManagerBtn.addEventListener("click", openRosterManagerFlow);
@@ -490,7 +444,6 @@ function attachEvents() {
   els.signInBtn.addEventListener("click", handleSignIn);
   els.signOutBtn.addEventListener("click", handleSignOut);
   els.generateBtn.addEventListener("click", handleGenerate);
-  els.reshuffleBtn.addEventListener("click", handleReshuffle);
   els.exportHistoryBtn.addEventListener("click", exportHistory);
   els.importHistoryBtn.addEventListener("click", () => {
     els.importHistoryInput.click();
@@ -520,7 +473,6 @@ function attachEvents() {
 
   [els.courts, els.bookingDuration, els.matchDuration].forEach((input) => {
     input.addEventListener("input", () => {
-      invalidateCurrentSession();
       updateStats(
         {
           rounds: getSessionSettings().totalRounds,
@@ -561,20 +513,6 @@ function attachEvents() {
     }
 
     await handleRemoveRosterPlayer(button.getAttribute("data-roster-remove"));
-  });
-
-  els.historyOutput.addEventListener("click", async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
-    const button = target.closest("[data-history-remove]");
-    if (!(button instanceof HTMLElement)) {
-      return;
-    }
-
-    await handleRemoveHistorySession(button.getAttribute("data-history-remove"));
   });
 
   window.addEventListener("online", async () => {
