@@ -325,22 +325,52 @@ textarea:focus {
   border: 1px solid var(--line);
 }
 
-.session-player-card,
+.session-player-group,
 .roster-manager-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   padding: 14px 16px;
   background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(216, 223, 220, 0.85);
   border-radius: 18px;
 }
 
-.session-player-card {
-  padding: 9px 12px;
-  border-radius: 14px;
-  gap: 10px;
+.roster-manager-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.session-player-group {
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 249, 247, 0.96));
+}
+
+.session-player-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.session-player-group-list {
+  display: grid;
+  gap: 0;
+  border: 1px solid rgba(216, 223, 220, 0.9);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.session-player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.session-player-row + .session-player-row {
+  border-top: 1px solid rgba(216, 223, 220, 0.82);
 }
 
 .session-player-meta,
@@ -380,6 +410,29 @@ textarea:focus {
 
 .session-player-actions {
   flex-shrink: 0;
+}
+
+.session-remove-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(197, 68, 68, 0.12);
+  color: #b22f2f;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0;
+  transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.session-remove-btn:hover {
+  background: rgba(197, 68, 68, 0.2);
+  color: #8d1f1f;
+  transform: scale(1.04);
 }
 
 .mini-btn {

@@ -58,17 +58,26 @@ export function renderPlayers(players, els) {
     return;
   }
 
-  els.playersList.innerHTML = players.map((player) => `
-    <article class="session-player-card">
-      <div class="session-player-meta">
-        <span class="session-player-name">${escapeHtml(player.name)}</span>
-        <span class="session-player-detail">${escapeHtml(player.sex)} · Skill ${Number(player.skill)}</span>
+  els.playersList.innerHTML = `
+    <article class="session-player-group">
+      <div class="session-player-group-head">
+        <span class="badge">${players.length} ${players.length === 1 ? "player" : "players"} selected</span>
       </div>
-      <div class="session-player-actions">
-        <button class="mini-btn danger-btn" type="button" data-remove-id="${player.id}">Remove</button>
+      <div class="session-player-group-list">
+        ${players.map((player) => `
+          <div class="session-player-row">
+            <div class="session-player-meta">
+              <span class="session-player-name">${escapeHtml(player.name)}</span>
+              <span class="session-player-detail">${escapeHtml(player.sex)} · Skill ${Number(player.skill)}</span>
+            </div>
+            <div class="session-player-actions">
+              <button class="session-remove-btn" type="button" data-remove-id="${player.id}" aria-label="Remove ${escapeHtml(player.name)} from session">X</button>
+            </div>
+          </div>
+        `).join("")}
       </div>
     </article>
-  `).join("");
+  `;
 }
 
 export function renderRoster(roster, els, normalizeName) {
