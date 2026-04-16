@@ -337,12 +337,22 @@ textarea:focus {
   border-radius: 18px;
 }
 
+.session-player-card {
+  padding: 9px 12px;
+  border-radius: 14px;
+  gap: 10px;
+}
+
 .session-player-meta,
 .roster-manager-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+}
+
+.session-player-meta {
+  gap: 8px;
 }
 
 .session-player-name,
@@ -357,11 +367,19 @@ textarea:focus {
   font-weight: 700;
 }
 
+.session-player-detail {
+  font-size: 0.84rem;
+}
+
 .session-player-actions,
 .roster-manager-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.session-player-actions {
+  flex-shrink: 0;
 }
 
 .mini-btn {
@@ -371,6 +389,12 @@ textarea:focus {
   background: #ffffff;
   cursor: pointer;
   font-weight: 700;
+}
+
+.session-player-actions .mini-btn {
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.82rem;
 }
 
 .danger-btn {
