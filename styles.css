@@ -59,6 +59,15 @@ body {
   pointer-events: none;
 }
 
+.hero-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
 .logo {
   display: inline-flex;
   align-items: baseline;
@@ -124,12 +133,52 @@ body {
   margin-top: 0;
 }
 
+.account-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(216, 223, 220, 0.9);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 24px rgba(17, 23, 21, 0.06);
+}
+
+.account-pill-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.auth-flyout {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  justify-items: end;
+  align-items: start;
+  padding: 96px 28px 28px;
+  background: rgba(17, 23, 21, 0.16);
+  backdrop-filter: blur(4px);
+}
+
+.auth-flyout.hidden {
+  display: none;
+}
+
 .auth-panel {
-  margin-bottom: 22px;
   padding: 18px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(216, 223, 220, 0.9);
+}
+
+.auth-flyout-card {
+  width: min(430px, calc(100vw - 56px));
+  margin-bottom: 0;
+  box-shadow: 0 20px 42px rgba(17, 23, 21, 0.14);
 }
 
 .auth-heading {
@@ -710,8 +759,14 @@ textarea:focus {
 }
 
 @media (max-width: 1120px) {
+  .hero-bar,
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .hero-bar {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 
@@ -724,6 +779,10 @@ textarea:focus {
   .meta-row,
   .auth-grid {
     grid-template-columns: 1fr;
+  }
+
+  .auth-flyout {
+    padding: 84px 16px 16px;
   }
 
   .section-head,

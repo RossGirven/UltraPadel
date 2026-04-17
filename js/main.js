@@ -16,6 +16,8 @@ import {
   renderHistory,
   updateStats,
   renderAuthState,
+  openAuthFlyout,
+  closeAuthFlyout,
   openRosterModal,
   closeRosterModal,
   setRosterModalState,
@@ -225,6 +227,18 @@ function openRosterManagerFlow() {
   openRosterModal(els);
 }
 
+function openAccountFlow() {
+  openAuthFlyout(els);
+  window.setTimeout(() => {
+    els.authEmail.focus();
+  }, 0);
+}
+
+function closeAccountFlow() {
+  closeAuthFlyout(els);
+  els.openAuthFlyoutBtn.focus();
+}
+
 async function handleRosterFormSubmit(event) {
   event.preventDefault();
   try {
@@ -396,6 +410,7 @@ async function handleSignUp() {
     await syncLocalCacheToSupabase();
     await loadData();
     setAuthFeedback("Account created. Check your email if Supabase confirmation is enabled, then sign in if required.", "success");
+    closeAuthFlyout(els);
   } catch (error) {
     setAuthFeedback(error.message || "Could not create your account.", "error");
   }
@@ -410,6 +425,7 @@ async function handleSignIn() {
     await syncLocalCacheToSupabase();
     await loadData();
     setAuthFeedback("Signed in successfully.", "success");
+    closeAuthFlyout(els);
   } catch (error) {
     setAuthFeedback(error.message || "Could not sign you in.", "error");
   }
@@ -422,12 +438,27 @@ async function handleSignOut() {
     state.currentSession = null;
     await loadData();
     setAuthFeedback("Signed out. The app is now using local browser storage.", "success");
+    closeAuthFlyout(els);
   } catch (error) {
     setAuthFeedback(error.message || "Could not sign you out.", "error");
   }
 }
 
 function attachEvents() {
+  els.openAuthFlyoutBtn.addEventListener("click", () => {
+    const isHidden = els.authFlyout.classList.contains("hidden");
+    if (isHidden) {
+      openAccountFlow();
+      return;
+    }
+    closeAccountFlow();
+  });
+  els.closeAuthFlyoutBtn.addEventListener("click", closeAccountFlow);
+  els.authFlyout.addEventListener("click", (event) => {
+    if (event.target === els.authFlyout) {
+      closeAccountFlow();
+    }
+  });
   els.openAddRosterBtn.addEventListener("click", openAddRosterFlow);
   els.openRosterManagerBtn.addEventListener("click", openRosterManagerFlow);
   els.addFromRosterBtn.addEventListener("click", addPlayerFromRoster);
@@ -518,6 +549,11 @@ function attachEvents() {
   window.addEventListener("online", async () => {
     await syncLocalCacheToSupabase();
     await loadData();
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !els.authFlyout.classList.contains("hidden")) {
+      closeAccountFlow();
+    }
   });
 }
 

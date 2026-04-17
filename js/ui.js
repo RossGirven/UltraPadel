@@ -14,6 +14,9 @@ export function getElements() {
     matchDuration: document.getElementById("matchDuration"),
     authEmail: document.getElementById("authEmail"),
     authPassword: document.getElementById("authPassword"),
+    openAuthFlyoutBtn: document.getElementById("openAuthFlyoutBtn"),
+    authFlyout: document.getElementById("authFlyout"),
+    closeAuthFlyoutBtn: document.getElementById("closeAuthFlyoutBtn"),
     signUpBtn: document.getElementById("signUpBtn"),
     signInBtn: document.getElementById("signInBtn"),
     signOutBtn: document.getElementById("signOutBtn"),
@@ -229,6 +232,18 @@ export function renderAuthState(auth, els) {
   }
 
   els.authMessage.textContent = "Sign in to store your roster and session history in Supabase. If you stay signed out, the app falls back to local browser storage.";
+}
+
+export function openAuthFlyout(els) {
+  els.authFlyout.classList.remove("hidden");
+  els.authFlyout.setAttribute("aria-hidden", "false");
+  els.openAuthFlyoutBtn.setAttribute("aria-expanded", "true");
+}
+
+export function closeAuthFlyout(els) {
+  els.authFlyout.classList.add("hidden");
+  els.authFlyout.setAttribute("aria-hidden", "true");
+  els.openAuthFlyoutBtn.setAttribute("aria-expanded", "false");
 }
 
 export function startShuffleAnimation(playerNames, els, state) {

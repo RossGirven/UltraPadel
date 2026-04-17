@@ -1,0 +1,126 @@
+#app {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+}
+
+.app {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgba(155, 224, 0, 0.12), transparent 36%),
+    #ffffff;
+  box-shadow: var(--shadow-md);
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -64px -64px auto;
+  width: 176px;
+  height: 176px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(155, 224, 0, 0.2), rgba(155, 224, 0, 0));
+  pointer-events: none;
+}
+
+.hero-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.layout {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-header,
+.section-head,
+.auth-heading,
+.modal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.config-grid,
+.auth-grid,
+.meta-row,
+.results-grid,
+.roster-controls,
+.actions {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.results-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.field,
+.modal-form,
+.modal-roster-list-wrap {
+  display: grid;
+  gap: var(--space-1);
+}
+
+@media (min-width: 720px) {
+  .hero-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .config-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .meta-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .roster-controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .auth-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .actions {
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    justify-content: start;
+  }
+}
+
+@media (min-width: 1040px) {
+  .layout {
+    grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+    align-items: start;
+  }
+}
