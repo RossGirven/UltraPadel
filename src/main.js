@@ -11,6 +11,7 @@ import {
   getStoredSessions,
   getStoredRoster,
   saveSession,
+  removeSession,
   upsertPlayer,
   removeRosterPlayer,
   clearHistory,
@@ -264,7 +265,10 @@ function renderHistory(sessions) {
 
   els.historyOutput.innerHTML = sessions.slice(0, 6).map((session) => `
     <article class="history-card">
-      <strong>${escapeHtml(formatDateTime(session.createdAt))}</strong>
+      <div class="history-card-head">
+        <strong>${escapeHtml(formatDateTime(session.createdAt))}</strong>
+        <button class="history-remove-btn" type="button" data-remove-session-id="${session.id}" aria-label="Delete recent session">X</button>
+      </div>
       <div class="history-line subtle">${session.teams.length} teams · ${session.settings.totalRounds} rounds · ${session.settings.courts} courts</div>
       <div class="history-line subtle">${escapeHtml(session.teams.map((team) => team.members.map((member) => member.name).join(" / ")).join(" · "))}</div>
     </article>
@@ -502,6 +506,32 @@ async function handleRemoveRosterPlayer(playerId) {
     els.rosterSelect.value = "";
   }
   refreshUi();
+}
+
+async function handleRemoveRecentSession(sessionId) {
+  if (!sessionId) {
+    return;
+  }
+
+  const session = state.sessions.find((entry) => entry.id === sessionId);
+  if (!session) {
+    return;
+  }
+
+  if (!confirm("Delete this recent session?")) {
+    return;
+  }
+
+  state.sessions = await removeSession(sessionId);
+  if (state.currentSession?.id === sessionId) {
+    state.currentSession = null;
+    stopShuffleAnimation("Ready to build a session");
+    els.shuffleState.innerHTML = "";
+    els.teamsOutput.innerHTML = renderTeamDisplay(null);
+    els.scheduleOutput.innerHTML = renderMatchSchedule(null);
+  }
+  renderHistory(state.sessions);
+  updateStats();
 }
 
 function addPlayer(player) {
@@ -797,6 +827,20 @@ function attachEvents() {
     }
 
     await handleRemoveRosterPlayer(button.getAttribute("data-roster-remove"));
+  });
+
+  els.historyOutput.addEventListener("click", async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const button = target.closest("[data-remove-session-id]");
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+
+    await handleRemoveRecentSession(button.getAttribute("data-remove-session-id"));
   });
 
   window.addEventListener("online", async () => {

@@ -218,6 +218,28 @@
   flex-shrink: 0;
 }
 
+.history-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.history-remove-btn {
+  width: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  background: rgba(198, 40, 40, 0.1);
+  color: var(--color-danger);
+  box-shadow: none;
+}
+
+.history-remove-btn:hover:not(:disabled) {
+  background: rgba(198, 40, 40, 0.16);
+}
+
 .session-remove-btn {
   width: 32px;
   min-width: 32px;
