@@ -34,7 +34,6 @@ export function getElements() {
     courts: document.getElementById("courts"),
     bookingDuration: document.getElementById("bookingDuration"),
     matchDuration: document.getElementById("matchDuration"),
-    openAddRosterBtn: document.getElementById("openAddRosterBtn"),
     openRosterManagerBtn: document.getElementById("openRosterManagerBtn"),
     rosterSelect: document.getElementById("rosterSelect"),
     addFromRosterBtn: document.getElementById("addFromRosterBtn"),

@@ -71,7 +71,6 @@ function buildAppShell() {
       <div class="section-head">
         <h3>Players</h3>
         <div class="actions">
-          ${renderButton({ id: "openAddRosterBtn", label: "Add To Roster" })}
           ${renderButton({ id: "openRosterManagerBtn", label: "View / Edit Roster" })}
         </div>
       </div>
@@ -445,13 +444,6 @@ function invalidateCurrentSession() {
   updateStats();
 }
 
-function openAddRosterFlow() {
-  resetRosterModal("add");
-  renderRosterModalState();
-  openLayer(els.rosterModal);
-  els.rosterNameInput.focus();
-}
-
 function openEditRosterFlow(playerId) {
   state.rosterModalMode = "edit";
   state.editingRosterId = playerId;
@@ -733,7 +725,6 @@ function attachEvents() {
     }
   });
 
-  els.openAddRosterBtn.addEventListener("click", openAddRosterFlow);
   els.openRosterManagerBtn.addEventListener("click", openRosterManagerFlow);
   els.addFromRosterBtn.addEventListener("click", addPlayerFromRoster);
   els.closeRosterModalBtn.addEventListener("click", closeRosterFlow);
