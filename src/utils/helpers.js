@@ -68,6 +68,7 @@ export function getElements() {
 }
 
 export function openLayer(layer, trigger) {
+  layer.hidden = false;
   layer.classList.remove("hidden");
   layer.setAttribute("aria-hidden", "false");
   if (trigger) {
@@ -76,6 +77,7 @@ export function openLayer(layer, trigger) {
 }
 
 export function closeLayer(layer, trigger) {
+  layer.hidden = true;
   layer.classList.add("hidden");
   layer.setAttribute("aria-hidden", "true");
   if (trigger) {

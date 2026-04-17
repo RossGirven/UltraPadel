@@ -175,7 +175,7 @@ function buildAppShell() {
       </div>
     </div>
 
-    <div id="authFlyout" class="auth-flyout hidden" aria-hidden="true">
+    <div id="authFlyout" class="auth-flyout hidden" aria-hidden="true" hidden>
       <div class="auth-panel auth-flyout-card" role="dialog" aria-modal="true" aria-labelledby="authFlyoutTitle">
         <div class="auth-heading">
           <h2 id="authFlyoutTitle">Account</h2>
@@ -194,7 +194,7 @@ function buildAppShell() {
       </div>
     </div>
 
-    <div id="rosterModal" class="modal-backdrop hidden" aria-hidden="true">
+    <div id="rosterModal" class="modal-backdrop hidden" aria-hidden="true" hidden>
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="rosterModalTitle">
         <div class="modal-head">
           <div>
@@ -432,6 +432,19 @@ function closeAccountFlow() {
   els.openAuthFlyoutBtn.focus();
 }
 
+function invalidateCurrentSession() {
+  if (!state.currentSession) {
+    return;
+  }
+
+  state.currentSession = null;
+  stopShuffleAnimation("Ready to build a session");
+  els.shuffleState.innerHTML = "";
+  els.teamsOutput.innerHTML = renderTeamDisplay(null);
+  els.scheduleOutput.innerHTML = renderMatchSchedule(null);
+  updateStats();
+}
+
 function openAddRosterFlow() {
   resetRosterModal("add");
   renderRosterModalState();
@@ -501,11 +514,13 @@ async function handleRemoveRosterPlayer(playerId) {
 
 function addPlayer(player) {
   state.players.push(player);
+  invalidateCurrentSession();
   els.playersList.innerHTML = renderPlayerList(state.players);
 }
 
 function removePlayer(id) {
   state.players = state.players.filter((player) => player.id !== id);
+  invalidateCurrentSession();
   els.playersList.innerHTML = renderPlayerList(state.players);
 }
 
@@ -667,7 +682,7 @@ async function handleSignUp() {
     await syncLocalCacheToSupabase();
     await loadData();
     setAuthFeedback("Account created. Check your email if Supabase confirmation is enabled, then sign in if required.", "success");
-    closeLayer(els.authFlyout, els.openAuthFlyoutBtn);
+    closeAccountFlow();
   } catch (error) {
     setAuthFeedback(error.message || "Could not create your account.", "error");
   }
@@ -682,7 +697,7 @@ async function handleSignIn() {
     await syncLocalCacheToSupabase();
     await loadData();
     setAuthFeedback("Signed in successfully.", "success");
-    closeLayer(els.authFlyout, els.openAuthFlyoutBtn);
+    closeAccountFlow();
   } catch (error) {
     setAuthFeedback(error.message || "Could not sign you in.", "error");
   }
@@ -695,7 +710,7 @@ async function handleSignOut() {
     state.currentSession = null;
     await loadData();
     setAuthFeedback("Signed out. The app is now using local browser storage.", "success");
-    closeLayer(els.authFlyout, els.openAuthFlyoutBtn);
+    closeAccountFlow();
   } catch (error) {
     setAuthFeedback(error.message || "Could not sign you out.", "error");
   }
@@ -756,7 +771,10 @@ function attachEvents() {
   });
 
   [els.courts, els.bookingDuration, els.matchDuration].forEach((input) => {
-    input.addEventListener("input", updateStats);
+    input.addEventListener("input", () => {
+      invalidateCurrentSession();
+      updateStats();
+    });
   });
 
   els.playersList.addEventListener("click", (event) => {
