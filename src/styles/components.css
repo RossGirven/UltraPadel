@@ -349,6 +349,11 @@
   backdrop-filter: blur(8px);
 }
 
+.auth-flyout.hidden,
+.modal-backdrop.hidden {
+  display: none;
+}
+
 .auth-flyout {
   z-index: 40;
   align-items: start;
