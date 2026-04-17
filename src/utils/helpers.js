@@ -32,6 +32,7 @@ export function getElements() {
     authStatusBadge: document.getElementById("authStatusBadge"),
     authMessage: document.getElementById("authMessage"),
     courts: document.getElementById("courts"),
+    upcomingSessionDate: document.getElementById("upcomingSessionDate"),
     bookingDuration: document.getElementById("bookingDuration"),
     matchDuration: document.getElementById("matchDuration"),
     openRosterManagerBtn: document.getElementById("openRosterManagerBtn"),
@@ -86,6 +87,23 @@ export function closeLayer(layer, trigger) {
 
 export function formatDateTime(value) {
   return new Date(value).toLocaleString();
+}
+
+export function formatDateOnly(value) {
+  return new Date(value).toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+export function getDefaultSessionDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function createDownload(name, contents, mimeType) {

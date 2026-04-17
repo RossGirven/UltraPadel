@@ -380,7 +380,9 @@ export function buildSession(teams, scheduleData, settings) {
   return {
     id: uid(),
     createdAt: new Date().toISOString(),
+    sessionDate: settings.sessionDate || new Date().toISOString().slice(0, 10),
     settings: {
+      sessionDate: settings.sessionDate || new Date().toISOString().slice(0, 10),
       courts: Number(settings.courts) || 0,
       bookingDuration: Number(settings.bookingDuration) || 0,
       matchDuration: Number(settings.matchDuration) || 0,

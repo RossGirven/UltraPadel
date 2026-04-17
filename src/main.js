@@ -30,7 +30,9 @@ import {
   createDownload,
   closeLayer,
   escapeHtml,
+  formatDateOnly,
   formatDateTime,
+  getDefaultSessionDate,
   getButtonText,
   getElements,
   openLayer
@@ -64,6 +66,7 @@ function buildAppShell() {
     body: `
       <h2>Session Setup</h2>
       <div class="config-grid">
+        ${renderInputField({ label: "Upcoming session date", id: "upcomingSessionDate", type: "date", value: getDefaultSessionDate() })}
         ${renderInputField({ label: "Number of courts", id: "courts", type: "number", value: "2", min: "1", step: "1" })}
         ${renderInputField({ label: "Total booking duration (minutes)", id: "bookingDuration", type: "number", value: "90", min: "1", step: "1" })}
         ${renderInputField({ label: "Match duration (minutes)", id: "matchDuration", type: "number", value: "20", min: "1", step: "1" })}
@@ -85,7 +88,6 @@ function buildAppShell() {
           })}
           ${renderButton({ id: "addFromRosterBtn", label: "Add To Session" })}
         </div>
-        <p class="footer-note">Players are added to the roster through the roster modal, then selected here for the current session.</p>
       </div>
 
       <div class="results-group">
@@ -250,6 +252,7 @@ function getSessionSettings() {
   const bookingDuration = Number(els.bookingDuration.value) || 0;
   const matchDuration = Number(els.matchDuration.value) || 0;
   return {
+    sessionDate: String(els.upcomingSessionDate.value || "").trim(),
     courts: Number(els.courts.value) || 0,
     bookingDuration,
     matchDuration,
@@ -266,11 +269,12 @@ function renderHistory(sessions) {
   els.historyOutput.innerHTML = sessions.slice(0, 6).map((session) => `
     <article class="history-card">
       <div class="history-card-head">
-        <strong>${escapeHtml(formatDateTime(session.createdAt))}</strong>
+        <strong>${escapeHtml(formatDateOnly(session.sessionDate || session.settings?.sessionDate || session.createdAt))}</strong>
         <button class="history-remove-btn" type="button" data-remove-session-id="${session.id}" aria-label="Delete recent session">X</button>
       </div>
       <div class="history-line subtle">${session.teams.length} teams · ${session.settings.totalRounds} rounds · ${session.settings.courts} courts</div>
       <div class="history-line subtle">${escapeHtml(session.teams.map((team) => team.members.map((member) => member.name).join(" / ")).join(" · "))}</div>
+      <div class="history-line subtle">Generated ${escapeHtml(formatDateTime(session.createdAt))}</div>
     </article>
   `).join("");
 }
@@ -791,7 +795,7 @@ function attachEvents() {
     }
   });
 
-  [els.courts, els.bookingDuration, els.matchDuration].forEach((input) => {
+  [els.upcomingSessionDate, els.courts, els.bookingDuration, els.matchDuration].forEach((input) => {
     input.addEventListener("input", () => {
       invalidateCurrentSession();
       updateStats();
